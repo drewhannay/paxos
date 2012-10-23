@@ -1,0 +1,2 @@
+Set up the repository: Check.
+Next we need to decide the structure of our code so we can divide up the work and get started.

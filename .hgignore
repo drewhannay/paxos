@@ -1,0 +1,8 @@
+.classpath
+.project
+.metadata\
+\bin\
+gen\
+\.DS_Store
+.swo
+.swp
