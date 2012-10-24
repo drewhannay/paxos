@@ -1,8 +1,9 @@
 .classpath
 .project
-.metadata\
-\bin\
-gen\
-\.DS_Store
+.metadata/*
+.settings/*
+bin/*
+gen/*
+.DS_Store
 .swo
 .swp
