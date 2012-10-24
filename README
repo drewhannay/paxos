@@ -1,0 +1,6 @@
+To set up the project in Eclipse:
+* Click "New" in Eclipse
+* Select "Java Project"
+* Project Name: "Paxos"
+* Uncheck "Use Default Location" and enter the path to this directory
+* Click "Finish". Eclipse will set up the project correctly using the existing source code.
