@@ -1,6 +1,11 @@
 package edu.wheaton.paxos;
 
-public class CommandMessage
+public enum CommandMessage
 {
-
+	START,
+	PAUSE,
+	ENTER,
+	LEAVE,
+	SHOW,
+	HIDE;
 }

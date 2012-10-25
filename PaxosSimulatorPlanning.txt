@@ -23,12 +23,14 @@ Participant
 PaxosMessage
 	MessageId (int)
 	Quorum
-		List<Integer> (participant ids)
-	Decree (Enum)
-		OpaqueDecree (String)
-		AddParticipant
-		RemoveParticipant
-		...?
+		ImmutableList<Integer> (participant ids)
+	Decree
+		value (String; used with OpaqueDecree)
+		DecreeType
+			OpaqueDecree
+			AddParticipant
+			RemoveParticipant
+			...?
 	Ballot
 		List<Integer> (participant ids)
 	
