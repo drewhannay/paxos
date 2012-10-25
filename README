@@ -4,3 +4,7 @@ To set up the project in Eclipse:
 * Project Name: "Paxos"
 * Uncheck "Use Default Location" and enter the path to this directory
 * Click "Finish". Eclipse will set up the project correctly using the existing source code.
+* Right click the project and click "Configure Build Path"
+* Click "Add JARs..."
+* Select the guava-13.0.1.jar file from the lib directory within the project
+* You're done!
