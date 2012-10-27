@@ -19,6 +19,15 @@ Participant
 	reference to PostOffice
 	Clock (class)
 		keeps time as an interval
+		
+	// things a participant does:
+	// join
+	// resign
+	// enter
+	// leave (amnesia?)
+	// delay (interval)
+	// initiate proposal
+	// receive (interval)
 
 PaxosMessage
 	MessageId (int)
