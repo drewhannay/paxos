@@ -1,5 +1,6 @@
 package edu.wheaton.paxos;
 
+import java.util.List;
 import java.util.Queue;
 
 import com.google.common.collect.Queues;
@@ -13,37 +14,58 @@ public final class Participant
 		m_clock = new Clock();
 
 		m_inbox = Queues.newPriorityQueue();
-		m_thread.start();
+		m_mainThread.start();
 	}
 
-	public void commandNotify(CommandMessage message)
+	public int getId()
 	{
-		switch (message)
+		return m_id;
+	}
+
+	public void receiveMessage(PaxosMessage message)
+	{
+		m_inbox.add(message);
+	}
+
+	public void executeCommand(CommandMessage command)
+	{
+		switch (command)
 		{
-		//process
+		case START:
+		case PAUSE:
+		case ENTER:
+		case LEAVE:
+		case SHOW:
+		case HIDE:
 		}
 	}
 
-	private final Thread m_thread = new Thread(new Runnable()
+	private final Thread m_mainThread = new Thread(new Runnable()
 	{
 		@Override
 		public void run()
 		{
 			while (true)
 			{
-				while (!m_inbox.isEmpty())
-				{
-					//process message
-				}
-
-				// randomly choose whether or not to propose a message
-				// if you're the leader, make the proposal, otherwise
-				// ask the leader
+				// things a participant does:
+				// join
+				// resign
+				// enter
+				// leave (amnesia?)
+				// delay (interval)
+				// initiate proposal
+				initiateProposal();
+				// receive (interval)
 			}
 		}
-	});
-	
 
+		private void initiateProposal()
+		{
+//			int messageId = Math.max(m_highestSeenNumber, m_promisedNumber) + 1;
+//			PaxosMessage message = new PaxosMessage(messageId, m_leaderId, quorum, new Decree(DecreeType.OPAQUE_DECREE, "Woo!"), new Bag<Integer>());
+//			m_highestSeenNumber = messageId;
+		}
+	});
 
 	private final RunnableOfT<PaxosMessage> m_sendMessageRunnable;
 	// housekeeping
@@ -52,6 +74,7 @@ public final class Participant
 
 	// volatile state
 	private final Queue<PaxosMessage> m_inbox;
+//	private final List<Integer> m_participants;
 
 	// Paxos state (persistent)
 //	private File m_eventLog;
