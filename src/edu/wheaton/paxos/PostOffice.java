@@ -7,6 +7,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Queues;
 
+import edu.wheaton.utility.RunnableOfT;
+
 public final class PostOffice
 {
 	public static void main(String[] args)
@@ -21,8 +23,8 @@ public final class PostOffice
 	{
 		m_eventQueue = Queues.newPriorityQueue();
 		m_participants = Lists.newArrayList();
-//		m_queues = Lists.newArrayList();
 
+		m_lock = new Object();
 		m_time = 0;
 		m_mainThread.start();
 	}
@@ -31,8 +33,6 @@ public final class PostOffice
 	{
 		Participant participant = new Participant(m_sendMessageRunnable);
 		m_participants.add(participant);
-//		Queue<PaxosMessage> queue = Queues.newPriorityQueue();
-//		m_queues.add(queue);
 	}
 
 	private void sendCommand(ImmutableSet<Participant> participants, CommandMessage command)
@@ -46,31 +46,47 @@ public final class PostOffice
 		@Override
 		public void run()
 		{
-			while (true)
+			while (!m_stopped)
 			{
-				if (m_eventQueue.isEmpty())
+				while (!m_paused)
 				{
-					try
+					if (m_eventQueue.isEmpty())
 					{
-						Thread.sleep(100);
+						try
+						{
+							Thread.sleep(100);
+						}
+						catch (InterruptedException e)
+						{
+							e.printStackTrace();
+						}
 					}
-					catch (InterruptedException e)
+					else
 					{
-						e.printStackTrace();
+						PaxosEvent event = m_eventQueue.poll();
+						m_time = event.getTime();
+						PaxosMessage message = event.getMessage();
+						int id = message.getRecipientId();
+						for (Participant participant : m_participants)
+						{
+							if (participant.getId() == id)
+								participant.receiveMessage(message);
+						}
 					}
 				}
-				else
+
+				synchronized (m_lock)
 				{
-					PaxosEvent event = m_eventQueue.poll();
-					m_time = event.getTime();
-					PaxosMessage message = event.getMessage();
-					int id = message.getRecipientId();
-					for (Participant participant : m_participants)
-					{
-						if (participant.getId() == id)
-							participant.receiveMessage(message);
-					}
-				}
+                    try
+                    {
+                    	m_lock.wait();
+                    }
+                    catch (InterruptedException e)
+                    {
+                    	Thread.currentThread().interrupt();
+                    	return;
+                    }
+                }
 			}
 		}
 	});
@@ -89,7 +105,10 @@ public final class PostOffice
 
 	private final Queue<PaxosEvent> m_eventQueue;
 	private final List<Participant> m_participants;
-//	private final List<Queue<PaxosMessage>> m_queues;
+	private final Object m_lock;
+
+	private volatile boolean m_stopped;
+	private volatile boolean m_paused;
 
 	private long m_time;
 }

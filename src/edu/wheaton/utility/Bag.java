@@ -1,4 +1,4 @@
-package edu.wheaton.paxos;
+package edu.wheaton.utility;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -6,7 +6,7 @@ import java.util.HashSet;
 public class Bag<E> extends HashSet<E>
 {
 	@Override
-	public boolean remove(Object arg0)
+	public boolean remove(Object element)
 	{
 		throw new UnsupportedOperationException();
 	}

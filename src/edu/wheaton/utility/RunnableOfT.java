@@ -1,4 +1,4 @@
-package edu.wheaton.paxos;
+package edu.wheaton.utility;
 
 public interface RunnableOfT<T>
 {
