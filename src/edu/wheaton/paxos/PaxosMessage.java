@@ -1,20 +1,19 @@
 package edu.wheaton.paxos;
 
-import java.util.List;
-
-import com.google.common.collect.ImmutableList;
-
 import edu.wheaton.utility.Bag;
 
 public class PaxosMessage
 {
-	public PaxosMessage(int messageId, int recipientId, List<Integer> quorum, Decree decree, Bag<Integer> ballot)
+	public static final int NO_ID = -1;
+
+	public PaxosMessage(int messageId, int senderId, int recipientId, Decree decree)
 	{
 		m_messageId = messageId;
+		m_senderId = senderId;
 		m_recipientId = recipientId;
-		m_quorum = ImmutableList.copyOf(quorum);
+		m_quorum = new Bag<Integer>();
 		m_decree = decree;
-		m_ballot = ballot;
+		m_ballot = new Bag<Integer>();
 	}
 
 	public int getMessageId()
@@ -22,12 +21,17 @@ public class PaxosMessage
 		return m_messageId;
 	}
 
+	public int getSenderId()
+	{
+		return m_senderId;
+	}
+
 	public int getRecipientId()
 	{
 		return m_recipientId;
 	}
 
-	public ImmutableList<Integer> getQuorum()
+	public Bag<Integer> getQuorum()
 	{
 		return m_quorum;
 	}
@@ -43,8 +47,9 @@ public class PaxosMessage
 	}
 
 	private final int m_messageId;
+	private final int m_senderId;
 	private final int m_recipientId;
-	private final ImmutableList<Integer> m_quorum;
+	private final Bag<Integer> m_quorum;
 	private final Decree m_decree;
 	private final Bag<Integer> m_ballot;
 }

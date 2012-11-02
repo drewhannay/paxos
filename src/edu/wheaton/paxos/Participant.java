@@ -1,11 +1,11 @@
 package edu.wheaton.paxos;
 
+import java.util.List;
 import java.util.Queue;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Queues;
 
-import edu.wheaton.utility.Bag;
 import edu.wheaton.utility.RunnableOfT;
 
 public final class Participant
@@ -21,6 +21,7 @@ public final class Participant
 		m_paused = false;
 
 		m_inbox = Queues.newPriorityQueue();
+		m_participants = Lists.newArrayList();
 		m_mainThread.start();
 	}
 
@@ -39,6 +40,8 @@ public final class Participant
 		switch (command)
 		{
 		case START:
+			if (!m_paused)
+				break;
 			m_paused = false;
 			synchronized (m_lock)
 			{
@@ -50,6 +53,7 @@ public final class Participant
 			break;
 		case ENTER:
 		case LEAVE:
+			// TODO: call leave()
 		case SHOW:
 		case HIDE:
 		}
@@ -64,6 +68,9 @@ public final class Participant
 			{
 				while (!m_paused)
 				{
+					// TODO: pick one of these
+					// Note: if you have "left", your only options should be enter() or delay()
+
 					// join
 					join();
 					// resign
@@ -97,53 +104,88 @@ public final class Participant
 
 		private void join()
 		{
-			// TODO Auto-generated method stub
+			Decree decree = new Decree(DecreeType.REQUEST_LOG);
+			for (Integer recipientId : m_participants)
+				m_sendMessageRunnable.run(new PaxosMessage(PaxosMessage.NO_ID, m_id, recipientId.intValue(), decree));			
 		}
 
 		private void resign()
 		{
-			// TODO Auto-generated method stub
+			Decree decree = new Decree(DecreeType.REMOVE_PARTICIPANT);
+			if (m_id == m_leaderId)
+			{
+				int messageId = Math.max(m_highestSeenNumber, m_promisedNumber) + 1;
+				m_highestSeenNumber = messageId;
+
+				for (Integer recipientId : m_participants)
+					m_sendMessageRunnable.run(new PaxosMessage(messageId, m_id, recipientId.intValue(), decree));
+			}
+			else
+			{
+				m_sendMessageRunnable.run(new PaxosMessage(PaxosMessage.NO_ID, m_id, m_leaderId, decree));
+			}
 		}
 
 		private void enter()
 		{
-			// TODO Auto-generated method stub
+			Decree decree = new Decree(DecreeType.REQUEST_LOG);
+			for (Integer recipientId : m_participants)
+				m_sendMessageRunnable.run(new PaxosMessage(PaxosMessage.NO_ID, m_id, recipientId.intValue(), decree));
 		}
 
 		private void leave(boolean withAmnesia)
 		{
-			// TODO Auto-generated method stub
+			m_isPresent = false;
+
+			if (withAmnesia)
+			{
+				m_inbox.clear();
+				m_participants.clear();
+			}
 		}
 
 		private void delay(int interval)
 		{
-			// TODO Auto-generated method stub
+			try
+			{
+				Thread.sleep(interval);
+			}
+			catch (InterruptedException e)
+			{
+				System.out.println("delay()");
+				e.printStackTrace();
+			}
 		}
 
 		private void initiateProposal()
 		{
-			int messageId = Math.max(m_highestSeenNumber, m_promisedNumber) + 1;
-			m_highestSeenNumber = messageId;
-
 			if (m_id == m_leaderId)
 			{
-				// TODO If we're the leader, we should know about all the participants and use the appropriate quorum
+				int messageId = Math.max(m_highestSeenNumber, m_promisedNumber) + 1;
+				m_highestSeenNumber = messageId;
+
+				Decree decree = new Decree(DecreeType.OPAQUE_DECREE, "Leader Decree");
+				for (Integer recipientId : m_participants)
+					m_sendMessageRunnable.run(new PaxosMessage(messageId, m_id, recipientId.intValue(), decree));
 			}
 			else
 			{
-				// TODO What should the decree message be? Does it matter?
-				// TODO Should the quorum be null in this case?
-				PaxosMessage message = new PaxosMessage(messageId, m_leaderId,
-						Lists.asList(Integer.valueOf(m_leaderId), null),
-						new Decree(DecreeType.OPAQUE_DECREE, "Woo!"),
-						new Bag<Integer>());
+				PaxosMessage message = new PaxosMessage(PaxosMessage.NO_ID, m_id, m_leaderId, 
+						new Decree(DecreeType.OPAQUE_DECREE, "Woo!"));
 				m_sendMessageRunnable.run(message);
 			}
 		}
 
 		private void receive(int interval)
 		{
-			// TODO Auto-generated method stub
+			if (!m_inbox.isEmpty())
+			{
+				//TODO
+			}
+			else
+			{
+				//TODO
+			}
 		}
 	});
 
@@ -151,10 +193,13 @@ public final class Participant
 	// housekeeping
 	private final int m_id;
 	private final Clock m_clock;
+	private boolean m_hasJoined;
+	private boolean m_isPresent;
 
 	// volatile state
 	private final Queue<PaxosMessage> m_inbox;
-//	private final List<Integer> m_participants;
+	private final List<Integer> m_participants;
+
 	private final Object m_lock;
 	private volatile boolean m_stopped;
 	private volatile boolean m_paused;
