@@ -14,6 +14,7 @@ public final class Participant
 	{
 		m_sendMessageRunnable = sendMessageRunnable;
 		m_id = 0;
+		
 		m_clock = new Clock();
 
 		m_lock = new Object();
