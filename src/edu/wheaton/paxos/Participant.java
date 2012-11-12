@@ -105,33 +105,35 @@ public final class Participant
 
 		private void join()
 		{
-			Decree decree = new Decree(DecreeType.REQUEST_LOG);
+			Decree decree = Decree.createRequestLogDecree(m_log.getLatestLogId());
 			for (Integer recipientId : m_participants)
-				m_sendMessageRunnable.run(new PaxosMessage(PaxosMessage.NO_ID, m_id, recipientId.intValue(), decree));			
+				m_sendMessageRunnable.run(new PaxosMessage(m_id, recipientId.intValue(), decree));			
 		}
 
 		private void resign()
 		{
-			Decree decree = new Decree(DecreeType.REMOVE_PARTICIPANT);
+			// TODO
+			Decree decree = null;// = new Decree(DecreeType.REMOVE_PARTICIPANT);
 			if (m_id == m_leaderId)
 			{
+				// TODO messageId needs to go in the Decree
 				int messageId = Math.max(m_highestSeenNumber, m_promisedNumber) + 1;
 				m_highestSeenNumber = messageId;
 
 				for (Integer recipientId : m_participants)
-					m_sendMessageRunnable.run(new PaxosMessage(messageId, m_id, recipientId.intValue(), decree));
+					m_sendMessageRunnable.run(new PaxosMessage(m_id, recipientId.intValue(), decree));
 			}
 			else
 			{
-				m_sendMessageRunnable.run(new PaxosMessage(PaxosMessage.NO_ID, m_id, m_leaderId, decree));
+				m_sendMessageRunnable.run(new PaxosMessage(m_id, m_leaderId, decree));
 			}
 		}
 
 		private void enter()
 		{
-			Decree decree = new Decree(DecreeType.REQUEST_LOG);
+			Decree decree = Decree.createRequestLogDecree(m_log.getLatestLogId());
 			for (Integer recipientId : m_participants)
-				m_sendMessageRunnable.run(new PaxosMessage(PaxosMessage.NO_ID, m_id, recipientId.intValue(), decree));
+				m_sendMessageRunnable.run(new PaxosMessage(m_id, recipientId.intValue(), decree));
 		}
 
 		private void leave(boolean withAmnesia)
@@ -165,14 +167,14 @@ public final class Participant
 				int messageId = Math.max(m_highestSeenNumber, m_promisedNumber) + 1;
 				m_highestSeenNumber = messageId;
 
-				Decree decree = new Decree(DecreeType.OPAQUE_DECREE, "Leader Decree");
+				Decree decree = Decree.createOpaqueDecree(messageId, "Leader Decree");
 				for (Integer recipientId : m_participants)
-					m_sendMessageRunnable.run(new PaxosMessage(messageId, m_id, recipientId.intValue(), decree));
+					m_sendMessageRunnable.run(new PaxosMessage(m_id, recipientId.intValue(), decree));
 			}
 			else
 			{
-				PaxosMessage message = new PaxosMessage(PaxosMessage.NO_ID, m_id, m_leaderId, 
-						new Decree(DecreeType.OPAQUE_DECREE, "Woo!"));
+				PaxosMessage message = new PaxosMessage(m_id, m_leaderId, 
+						Decree.createOpaqueDecree(Decree.NO_ID, "Woo!"));
 				m_sendMessageRunnable.run(message);
 			}
 		}
@@ -181,11 +183,54 @@ public final class Participant
 		{
 			if (!m_inbox.isEmpty())
 			{
-				//TODO
+				PaxosMessage message = m_inbox.poll();
+				Decree decree = message.getDecree();
+				Decree responseDecree;
+				switch (decree.getDecreeType())
+				{
+				case OPAQUE_DECREE:
+					break;
+				case ADD_PARTICIPANT:
+					break;
+				case REMOVE_PARTICIPANT:
+					break;
+				case SET_LEADER:
+					break;
+				case REQUEST_LOG:
+					if (m_log.getLatestLogId() > decree.getLogId())
+					{
+						responseDecree = Decree.createSendLogDecree(m_log.getLogSinceId(decree.getLogId()), m_log.getLatestLogId());
+						m_sendMessageRunnable.run(new PaxosMessage(m_id, message.getSenderId(), responseDecree));
+					}
+					break;
+				case SEND_LOG:
+					m_log.update(decree.getDecreeValue());
+					if (m_log.getLatestLogId() < decree.getLogId())
+					{
+						responseDecree = Decree.createRequestLogDecree(m_log.getLatestLogId());
+						m_sendMessageRunnable.run(new PaxosMessage(m_id, message.getSenderId(), responseDecree));
+					}
+					break;
+				}
 			}
 			else
 			{
-				//TODO
+				if (interval > 0)
+				{
+					try
+					{
+						Thread.sleep(1);
+						receive(interval - 1);
+					}
+					catch (InterruptedException e)
+					{
+						e.printStackTrace();
+					}
+				}
+				else
+				{
+					return;
+				}
 			}
 		}
 	});
@@ -206,7 +251,7 @@ public final class Participant
 	private volatile boolean m_paused;
 
 	// Paxos state (persistent)
-//	private File m_eventLog;
+	private PaxosLog m_log;
 	private int m_promisedNumber;
 	private int m_highestSeenNumber;
 

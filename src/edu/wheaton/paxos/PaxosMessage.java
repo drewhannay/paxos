@@ -4,21 +4,13 @@ import edu.wheaton.utility.Bag;
 
 public class PaxosMessage
 {
-	public static final int NO_ID = -1;
-
-	public PaxosMessage(int messageId, int senderId, int recipientId, Decree decree)
+	public PaxosMessage(int senderId, int recipientId, Decree decree)
 	{
-		m_messageId = messageId;
 		m_senderId = senderId;
 		m_recipientId = recipientId;
 		m_quorum = new Bag<Integer>();
 		m_decree = decree;
 		m_ballot = new Bag<Integer>();
-	}
-
-	public int getMessageId()
-	{
-		return m_messageId;
 	}
 
 	public int getSenderId()
@@ -46,7 +38,6 @@ public class PaxosMessage
 		return m_ballot;
 	}
 
-	private final int m_messageId;
 	private final int m_senderId;
 	private final int m_recipientId;
 	private final Bag<Integer> m_quorum;
