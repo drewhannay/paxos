@@ -189,12 +189,19 @@ public final class Participant
 				switch (decree.getDecreeType())
 				{
 				case OPAQUE_DECREE:
+					m_log.recordDecree(decree);
 					break;
 				case ADD_PARTICIPANT:
 					break;
 				case REMOVE_PARTICIPANT:
+//					int removeId = Integer.parseInt(decree.getDecreeValue());
+//					m_participants.remove(removeId);
 					break;
 				case SET_LEADER:
+					m_leaderId = Integer.parseInt(decree.getDecreeValue());
+					m_leaderInterval = decree.getInterval();
+					m_log.recordDecree(decree);
+					// TODO maintain interval
 					break;
 				case REQUEST_LOG:
 					if (m_log.getLatestLogId() > decree.getLogId())
@@ -257,4 +264,5 @@ public final class Participant
 
 	// Paxos-maintained state
 	private int m_leaderId;
+	private int m_leaderInterval;
 }
