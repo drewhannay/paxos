@@ -7,3 +7,4 @@ gen/*
 .DS_Store
 .swo
 .swp
+.log

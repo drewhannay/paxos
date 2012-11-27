@@ -14,9 +14,15 @@ public final class PostOffice
 	public static void main(String[] args)
 	{
 		PostOffice postOffice = new PostOffice();
-		postOffice.addParticipant();
-		postOffice.addParticipant();
-		postOffice.addParticipant();
+		postOffice.addParticipant(m_participantIdGenerator++);
+		postOffice.addParticipant(m_participantIdGenerator++);
+		postOffice.addParticipant(m_participantIdGenerator++);
+		postOffice.m_eventQueue.add(new PaxosEvent(postOffice.m_time++, 
+				new PaxosMessage(0, 1, Decree.createOpaqueDecree(0, "test"))));
+		postOffice.m_eventQueue.add(new PaxosEvent(postOffice.m_time++, 
+				new PaxosMessage(1, 2, Decree.createOpaqueDecree(0, "ignore me"))));
+		postOffice.m_eventQueue.add(new PaxosEvent(postOffice.m_time++, 
+				new PaxosMessage(1, 2, Decree.createOpaqueDecree(1, "test2"))));
 	}
 
 	public PostOffice()
@@ -29,9 +35,9 @@ public final class PostOffice
 		m_mainThread.start();
 	}
 
-	private void addParticipant()
+	private void addParticipant(int participantId)
 	{
-		Participant participant = new Participant(m_sendMessageRunnable);
+		Participant participant = new Participant(participantId, m_sendMessageRunnable);
 		m_participants.add(participant);
 	}
 
@@ -102,6 +108,8 @@ public final class PostOffice
 	};
 
 	private static final int DELAY = 10;
+
+	private static int m_participantIdGenerator = 0;
 
 	private final Queue<PaxosEvent> m_eventQueue;
 	private final List<Participant> m_participants;

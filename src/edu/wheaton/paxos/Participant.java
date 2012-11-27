@@ -10,18 +10,19 @@ import edu.wheaton.utility.RunnableOfT;
 
 public final class Participant
 {
-	public Participant(RunnableOfT<PaxosMessage> sendMessageRunnable)
+	public Participant(int id, RunnableOfT<PaxosMessage> sendMessageRunnable)
 	{
 		m_sendMessageRunnable = sendMessageRunnable;
-		m_id = 0;
+		m_id = id;
 		
 		m_clock = new Clock();
+		m_log = new PaxosLog(m_id);
 
 		m_lock = new Object();
 		m_stopped = false;
 		m_paused = false;
 
-		m_inbox = Queues.newPriorityQueue();
+		m_inbox = Queues.newArrayDeque();
 		m_participants = Lists.newArrayList();
 		m_mainThread.start();
 	}
@@ -72,19 +73,19 @@ public final class Participant
 					// TODO: pick one of these
 					// Note: if you have "left", your only options should be enter() or delay()
 
-					// join
-					join();
-					// resign
-					resign();
-					// enter
-					enter();
-					// leave (amnesia?)
-					leave(true);
-					// delay
-					delay(10);
-					// initiate proposal
-					initiateProposal();
-					// receive (interval)
+//					// join
+//					join();
+//					// resign
+//					resign();
+//					// enter
+//					enter();
+//					// leave (amnesia?)
+//					leave(true);
+//					// delay
+//					delay(10);
+//					// initiate proposal
+//					initiateProposal();
+//					// receive (interval)
 					receive(10);
 				}
 
@@ -190,6 +191,7 @@ public final class Participant
 				{
 				case OPAQUE_DECREE:
 					m_log.recordDecree(decree);
+					System.out.println(decree.toString());
 					break;
 				case ADD_PARTICIPANT:
 					break;
@@ -258,7 +260,7 @@ public final class Participant
 	private volatile boolean m_paused;
 
 	// Paxos state (persistent)
-	private PaxosLog m_log;
+	private final PaxosLog m_log;
 	private int m_promisedNumber;
 	private int m_highestSeenNumber;
 

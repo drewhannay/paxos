@@ -11,6 +11,22 @@ public class PaxosLog
 	public PaxosLog(int partipantId)
 	{
 		m_file = new File(partipantId + ".log");
+		if (m_file.exists())
+		{
+			if (!m_file.delete())
+			{
+				System.err.println("Log file " + partipantId + ".log could not be deleted");
+				System.exit(-1);
+			}
+		}
+		try
+		{
+			m_file.createNewFile();
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	public int getFirstLogId()
@@ -20,7 +36,8 @@ public class PaxosLog
 		try
 		{
 			scanner = new Scanner(m_file);
-			firstLogId = scanner.nextInt();
+			String line = scanner.nextLine();
+			firstLogId = Integer.parseInt(line.substring(0, line.indexOf(Decree.DELIMITER)));
 			scanner.close();
 		}
 		catch (FileNotFoundException e)
@@ -39,22 +56,8 @@ public class PaxosLog
 	public void recordDecree(Decree decree)
 	{
 		String lineToAppend = decree.toString();
-		try
-		{
-			Scanner scanner = new Scanner(m_file);
-			while (scanner.hasNextLine())
-			{
-				String line = scanner.nextLine();
-				if (line.equals(lineToAppend))
-					return;
-			}
-			scanner.close();
-		}
-		catch (FileNotFoundException e)
-		{
-			e.printStackTrace();
+		if (decree.getDecreeId() != getFirstUnknownId())
 			return;
-		}
 
 		try
 		{
@@ -76,7 +79,7 @@ public class PaxosLog
 			while (scanner.hasNextLine())
 			{
 				String line = scanner.nextLine();
-				if (line.startsWith(Integer.toString(id)))
+				if (Integer.parseInt(line.substring(0, line.indexOf(Decree.DELIMITER))) == id)
 					return Decree.fromString(line);
 			}
 			scanner.close();
@@ -100,13 +103,16 @@ public class PaxosLog
 				line = scanner.nextLine();
 			scanner.close();
 
-			return Integer.parseInt(line.substring(0, line.indexOf(' ')));
+			if (line.isEmpty())
+				return -1;
+
+			return Integer.parseInt(line.substring(0, line.indexOf(Decree.DELIMITER)));
 		}
 		catch (FileNotFoundException e)
 		{
 			e.printStackTrace();
 		}
-		return 0;
+		return -1;
 	}
 
 	public String getLogSinceId(int logId)
@@ -119,7 +125,7 @@ public class PaxosLog
 			while (scanner.hasNextLine())
 			{
 				String line = scanner.nextLine();
-				if (line.startsWith(Integer.toString(logId)))
+				if (!isPastGivenId && Integer.parseInt(line.substring(0, line.indexOf(Decree.DELIMITER))) == logId)
 					isPastGivenId = true;
 				if (isPastGivenId)
 					logBuilder.append(line);
@@ -137,9 +143,10 @@ public class PaxosLog
 	public void update(String log)
 	{
 		int firstUnknownId = getFirstUnknownId();
-		while (!log.startsWith(Integer.toString(firstUnknownId)) && log.contains("\n"))
+		while (Integer.parseInt(log.substring(0, log.indexOf(Decree.DELIMITER))) != firstUnknownId
+			&& log.contains("\n"))
 		{
-			log = log.substring(log.indexOf('\n'));
+			log = log.substring(log.indexOf('\n') + 1);
 		}
 		if (!log.isEmpty())
 		{
