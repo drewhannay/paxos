@@ -1,4 +1,4 @@
-package edu.wheaton.paxos;
+package edu.wheaton.paxos.logic;
 
 public enum CommandMessage
 {

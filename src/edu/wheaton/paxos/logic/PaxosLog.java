@@ -1,4 +1,4 @@
-package edu.wheaton.paxos;
+package edu.wheaton.paxos.logic;
 
 import java.io.File;
 import java.io.FileNotFoundException;

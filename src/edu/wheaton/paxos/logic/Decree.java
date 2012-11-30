@@ -1,4 +1,4 @@
-package edu.wheaton.paxos;
+package edu.wheaton.paxos.logic;
 
 import com.google.common.base.Preconditions;
 

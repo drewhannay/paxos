@@ -1,4 +1,4 @@
-package edu.wheaton.paxos;
+package edu.wheaton.paxos.logic;
 
 import java.util.List;
 import java.util.Queue;
@@ -7,7 +7,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Queues;
 
-import edu.wheaton.utility.RunnableOfT;
+import edu.wheaton.paxos.utility.RunnableOfT;
 
 public final class PostOffice
 {

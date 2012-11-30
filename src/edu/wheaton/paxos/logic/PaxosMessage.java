@@ -1,6 +1,6 @@
-package edu.wheaton.paxos;
+package edu.wheaton.paxos.logic;
 
-import edu.wheaton.utility.Bag;
+import edu.wheaton.paxos.utility.Bag;
 
 public class PaxosMessage
 {
