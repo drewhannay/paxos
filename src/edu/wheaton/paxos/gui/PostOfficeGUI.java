@@ -55,8 +55,6 @@ public class PostOfficeGUI extends JFrame
         DelayButton = new JButton();
         LeaveButton = new JButton();
         m_participantNamePanel = new JPanel();
-        imagePanel = new JPanel();
-        m_profileImageLabel = new JLabel();
         m_participantNameLabel = new JLabel();
         PlusMinusPanel = new JPanel();
         PlusButton = new JButton();
@@ -170,19 +168,6 @@ public class PostOfficeGUI extends JFrame
 
         m_participantNamePanel.setBorder(BorderFactory.createEtchedBorder());
 
-        m_profileImageLabel.setIcon(PROFILE_ICON);
-
-        GroupLayout imagePanelLayout = new GroupLayout(imagePanel);
-        imagePanel.setLayout(imagePanelLayout);
-        imagePanelLayout.setHorizontalGroup(
-            imagePanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(m_profileImageLabel, GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)
-        );
-        imagePanelLayout.setVerticalGroup(
-            imagePanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(m_profileImageLabel, GroupLayout.DEFAULT_SIZE, 144, Short.MAX_VALUE)
-        );
-
         m_participantNameLabel.setText("Participant Name");
 
         GroupLayout imageNamePanelLayout = new GroupLayout(m_participantNamePanel);
@@ -193,20 +178,13 @@ public class PostOfficeGUI extends JFrame
                 .addGroup(imageNamePanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addGroup(imageNamePanelLayout.createSequentialGroup()
                         .addGap(21, 21, 21)
-                        .addComponent(m_participantNameLabel))
-                    .addGroup(imageNamePanelLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(imagePanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                        .addComponent(m_participantNameLabel)))
                 .addContainerGap())
         );
         imageNamePanelLayout.setVerticalGroup(
             imageNamePanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(imageNamePanelLayout.createSequentialGroup()
-                .addGap(60, 60, 60)
-                .addComponent(m_participantNameLabel)
-                .addGap(18, 18, 18)
-                .addComponent(imagePanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
+                .addComponent(m_participantNameLabel))
         );
 
         PlusMinusPanel.setBorder(BorderFactory.createEtchedBorder());
@@ -354,7 +332,6 @@ public class PostOfficeGUI extends JFrame
     private static final long serialVersionUID = -7049383055209558563L;
     private static final ImageIcon PAUSE_ICON = new ImageIcon(PostOfficeGUI.class.getResource("/images/pause2.png"));
     private static final ImageIcon PLAY_ICON = new ImageIcon(PostOfficeGUI.class.getResource("/images/play2.png"));
-    private static final ImageIcon PROFILE_ICON = new ImageIcon(PostOfficeGUI.class.getResource("/images/profile1.png"));
     
     private static int m_participantIdGenerator = 1;
 //	private static int m_time = 1;
@@ -386,8 +363,6 @@ public class PostOfficeGUI extends JFrame
     private JPanel TopPanel;
     private JButton homeButton;
     private JPanel m_participantNamePanel;
-    private JPanel imagePanel;
-    private JLabel m_profileImageLabel;
     private JLabel m_participantNameLabel;
     private JButton promoteButton;
     private JLabel timeLabel;
