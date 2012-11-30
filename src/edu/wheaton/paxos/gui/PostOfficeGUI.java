@@ -17,6 +17,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.LayoutStyle;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import edu.wheaton.paxos.logic.PostOffice;
 import edu.wheaton.paxos.utility.RunnableOfT;
@@ -78,6 +81,7 @@ public class PostOfficeGUI extends JFrame
 
         m_listModel = new DefaultListModel();
 		m_participantList.setModel(m_listModel);
+		m_participantList.getSelectionModel().addListSelectionListener(m_listSelectionListener);
         m_participantScrollPane.setViewportView(m_participantList);
 
         m_participantListLabel.setText("Participants");
@@ -179,7 +183,7 @@ public class PostOfficeGUI extends JFrame
 
         m_participantNamePanel.setBorder(BorderFactory.createEtchedBorder());
 
-        m_participantNameLabel.setText("Participant Name");
+        m_participantNameLabel.setText("None Selected");
 
         GroupLayout imageNamePanelLayout = new GroupLayout(m_participantNamePanel);
         m_participantNamePanel.setLayout(imageNamePanelLayout);
@@ -346,6 +350,21 @@ public class PostOfficeGUI extends JFrame
 		public void run(String time)
 		{
 			m_timeDisplay.setText(time);
+		}
+	};
+
+	private final ListSelectionListener m_listSelectionListener = new ListSelectionListener()
+	{
+		@Override
+		public void valueChanged(ListSelectionEvent event)
+		{
+			ListSelectionModel model = (ListSelectionModel) event.getSource();
+			if (model.isSelectionEmpty() || model.getMaxSelectionIndex() - model.getMinSelectionIndex() != 0)
+				m_participantNameLabel.setText("None Selected");
+			else
+				m_participantNameLabel.setText(m_listModel.get(model.getMaxSelectionIndex()).toString());
+
+			pack();
 		}
 	};
 
