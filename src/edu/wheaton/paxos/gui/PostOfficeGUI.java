@@ -54,10 +54,10 @@ public class PostOfficeGUI extends JFrame
         EnterButton = new JButton();
         DelayButton = new JButton();
         LeaveButton = new JButton();
-        imageNamePanel = new JPanel();
+        m_participantNamePanel = new JPanel();
         imagePanel = new JPanel();
-        jButton2 = new JButton();
-        nameLabel = new JLabel();
+        m_profileImageLabel = new JLabel();
+        m_participantNameLabel = new JLabel();
         PlusMinusPanel = new JPanel();
         PlusButton = new JButton();
         MinusButton = new JButton();
@@ -83,11 +83,12 @@ public class PostOfficeGUI extends JFrame
 
         TopPanel.setBorder(BorderFactory.createEtchedBorder());
 
-        homeButton.setIcon(new ImageIcon(getClass().getResource("/images/image/home1.png")));
+        homeButton.setIcon(new ImageIcon(getClass().getResource("/images/home1.png")));
         homeButton.setMinimumSize(new Dimension(10, 10));
         homeButton.setPreferredSize(new Dimension(10, 10));
 
-        PlayPauseButton.setIcon(new ImageIcon(getClass().getResource("/images/image/pause2.png")));
+        PlayPauseButton.setIcon(PAUSE_ICON);
+        PlayPauseButton.addActionListener(m_playPauseButtonListener);
 
         timeLabel.setText("currentTime");
 
@@ -128,13 +129,7 @@ public class PostOfficeGUI extends JFrame
         ResignButton.setText("Resign");
 
         EnterButton.setText("Enter");
-        EnterButton.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent event)
-            {
-                EnterButtonActionPerformed(event);
-            }
-        });
+        EnterButton.addActionListener(m_enterButtonListener);
 
         DelayButton.setText("Delay");
 
@@ -173,34 +168,32 @@ public class PostOfficeGUI extends JFrame
                 .addContainerGap())
         );
 
-        imageNamePanel.setBorder(BorderFactory.createEtchedBorder());
+        m_participantNamePanel.setBorder(BorderFactory.createEtchedBorder());
 
-        imagePanel.setBorder(BorderFactory.createEtchedBorder());
-
-        jButton2.setIcon(new ImageIcon(getClass().getResource("/images/image/profile1.png"))); // NOI18N
+        m_profileImageLabel.setIcon(PROFILE_ICON);
 
         GroupLayout imagePanelLayout = new GroupLayout(imagePanel);
         imagePanel.setLayout(imagePanelLayout);
         imagePanelLayout.setHorizontalGroup(
             imagePanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(jButton2, GroupLayout.DEFAULT_SIZE, 132, Short.MAX_VALUE)
+            .addComponent(m_profileImageLabel, GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)
         );
         imagePanelLayout.setVerticalGroup(
             imagePanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(jButton2, GroupLayout.DEFAULT_SIZE, 160, Short.MAX_VALUE)
+            .addComponent(m_profileImageLabel, GroupLayout.DEFAULT_SIZE, 144, Short.MAX_VALUE)
         );
 
-        nameLabel.setText("Name here");
+        m_participantNameLabel.setText("Participant Name");
 
-        GroupLayout imageNamePanelLayout = new GroupLayout(imageNamePanel);
-        imageNamePanel.setLayout(imageNamePanelLayout);
+        GroupLayout imageNamePanelLayout = new GroupLayout(m_participantNamePanel);
+        m_participantNamePanel.setLayout(imageNamePanelLayout);
         imageNamePanelLayout.setHorizontalGroup(
             imageNamePanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(imageNamePanelLayout.createSequentialGroup()
                 .addGroup(imageNamePanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addGroup(imageNamePanelLayout.createSequentialGroup()
                         .addGap(21, 21, 21)
-                        .addComponent(nameLabel))
+                        .addComponent(m_participantNameLabel))
                     .addGroup(imageNamePanelLayout.createSequentialGroup()
                         .addContainerGap()
                         .addComponent(imagePanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
@@ -210,7 +203,7 @@ public class PostOfficeGUI extends JFrame
             imageNamePanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(imageNamePanelLayout.createSequentialGroup()
                 .addGap(60, 60, 60)
-                .addComponent(nameLabel)
+                .addComponent(m_participantNameLabel)
                 .addGap(18, 18, 18)
                 .addComponent(imagePanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
@@ -218,24 +211,10 @@ public class PostOfficeGUI extends JFrame
 
         PlusMinusPanel.setBorder(BorderFactory.createEtchedBorder());
         PlusButton.setText("+");
-        PlusButton.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent event)
-			{
-				PlusButtonActionPerformed(event);
-			}
-		});
+        PlusButton.addActionListener(m_plusButtonListener);
         
         MinusButton.setText("-");
-        MinusButton.addActionListener(new ActionListener()
-        {
-        	@Override
-            public void actionPerformed(ActionEvent event)
-            {
-                MinusButtonActionPerformed(event);
-            }
-        });
+        MinusButton.addActionListener(m_minusButtonListener);
 
 
         GroupLayout PlusMinusPanelLayout = new GroupLayout(PlusMinusPanel);
@@ -279,7 +258,7 @@ public class PostOfficeGUI extends JFrame
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(LogScrollPane, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(imageNamePanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                        .addComponent(m_participantNamePanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(DetailsScrollPane, GroupLayout.DEFAULT_SIZE, 230, Short.MAX_VALUE)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
@@ -303,7 +282,7 @@ public class PostOfficeGUI extends JFrame
                         .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                             .addComponent(DetailsScrollPane, GroupLayout.DEFAULT_SIZE, 278, Short.MAX_VALUE)
                             .addComponent(OperationsPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(imageNamePanel, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                            .addComponent(m_participantNamePanel, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                             .addComponent(LogScrollPane, GroupLayout.DEFAULT_SIZE, 98, Short.MAX_VALUE)
@@ -332,27 +311,56 @@ public class PostOfficeGUI extends JFrame
         setVisible(true);
     }
 
-    private void EnterButtonActionPerformed(ActionEvent event)
-    {
-        // TODO add your handling code here:
-    }
+    private final ActionListener m_enterButtonListener = new ActionListener()
+	{
+		@Override
+		public void actionPerformed(ActionEvent e)
+		{
+			// TODO Auto-generated method stub
+		}
+	};
+    private final ActionListener m_plusButtonListener = new ActionListener()
+	{
+		@Override
+		public void actionPerformed(ActionEvent e)
+		{
+			m_listModel.addElement("Participant " + m_participantIdGenerator);
+			m_postOffice.addParticipant(m_participantIdGenerator++);
+		}
+	};
 
-    private void PlusButtonActionPerformed(ActionEvent event)
-    {
-    	m_listModel.addElement("Participant " + m_participantIdGenerator);
-    	m_postOffice.addParticipant(m_participantIdGenerator++);
-    }
+    private final ActionListener m_minusButtonListener = new ActionListener()
+	{
+		@Override
+		public void actionPerformed(ActionEvent event)
+		{
+			for (Object value : ParticipantList.getSelectedValues())
+			{
+				// TODO actually remove the participant from the PostOffice
+				m_listModel.removeElement(value);
+			}
+		}
+	};
 
-    private void MinusButtonActionPerformed(ActionEvent event)
-    {
-    	for (Object value : ParticipantList.getSelectedValues())
-    	{
-    		// TODO actually remove the participant from the PostOffice
-    		m_listModel.removeElement(value);
-    	}
-    }
+    private final ActionListener m_playPauseButtonListener = new ActionListener()
+	{
+		@Override
+		public void actionPerformed(ActionEvent event)
+		{
+			PlayPauseButton.setIcon(m_postOffice.togglePauseState() ? PLAY_ICON : PAUSE_ICON);
+		}
+	};
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private static final long serialVersionUID = -7049383055209558563L;
+    private static final ImageIcon PAUSE_ICON = new ImageIcon(PostOfficeGUI.class.getResource("/images/pause2.png"));
+    private static final ImageIcon PLAY_ICON = new ImageIcon(PostOfficeGUI.class.getResource("/images/play2.png"));
+    private static final ImageIcon PROFILE_ICON = new ImageIcon(PostOfficeGUI.class.getResource("/images/profile1.png"));
+    
+    private static int m_participantIdGenerator = 1;
+//	private static int m_time = 1;
+
+    private final PostOffice m_postOffice;
+
     private JButton DelayButton;
     private JScrollPane DetailsJScrollPane;
     private ScrollPane DetailsScrollPane;
@@ -377,20 +385,11 @@ public class PostOfficeGUI extends JFrame
     private JButton ResignButton;
     private JPanel TopPanel;
     private JButton homeButton;
-    private JPanel imageNamePanel;
+    private JPanel m_participantNamePanel;
     private JPanel imagePanel;
-    private JButton jButton2;
-    private JLabel nameLabel;
+    private JLabel m_profileImageLabel;
+    private JLabel m_participantNameLabel;
     private JButton promoteButton;
     private JLabel timeLabel;
-    // End of variables declaration//GEN-END:variables
-
-	private static final long serialVersionUID = -7049383055209558563L;
-
-	private static int m_participantIdGenerator = 1;
-//	private static int m_time = 1;
-
-	private final PostOffice m_postOffice;
-
-	private DefaultListModel m_listModel;
+    private DefaultListModel m_listModel;
 }

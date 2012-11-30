@@ -2,8 +2,7 @@ package edu.wheaton.paxos.logic;
 
 public enum CommandMessage
 {
-	START,
-	PAUSE,
+	TOGGLE_PAUSE_STATE,
 	ENTER,
 	LEAVE,
 	SHOW,

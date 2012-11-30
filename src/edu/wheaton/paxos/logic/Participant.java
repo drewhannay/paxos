@@ -41,17 +41,15 @@ public final class Participant
 	{
 		switch (command)
 		{
-		case START:
+		case TOGGLE_PAUSE_STATE:
+			m_paused = !m_paused;
 			if (!m_paused)
-				break;
-			m_paused = false;
-			synchronized (m_lock)
 			{
-				m_lock.notifyAll();
+				synchronized (m_lock)
+				{
+					m_lock.notifyAll();
+				}
 			}
-			break;
-		case PAUSE:
-			m_paused = true;
 			break;
 		case ENTER:
 		case LEAVE:

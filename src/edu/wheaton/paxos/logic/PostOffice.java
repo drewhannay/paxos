@@ -31,11 +31,22 @@ public final class PostOffice
 		m_eventQueue.add(event);
 	}
 
-//	private void sendCommand(ImmutableSet<Participant> participants, CommandMessage command)
-//	{
-//		for (Participant participant : participants)
-//			participant.executeCommand(command);
-//	}
+	/**
+	 * Toggle the pause state of the simulation
+	 * @return The new pause state of the simulation
+	 */
+	public boolean togglePauseState()
+	{
+		sendCommand(m_participants, CommandMessage.TOGGLE_PAUSE_STATE);
+		m_paused = !m_paused;
+		return m_paused;
+	}
+
+	private void sendCommand(List<Participant> participants, CommandMessage command)
+	{
+		for (Participant participant : participants)
+			participant.executeCommand(command);
+	}
 
 	private final Thread m_mainThread = new Thread(new Runnable()
 	{
