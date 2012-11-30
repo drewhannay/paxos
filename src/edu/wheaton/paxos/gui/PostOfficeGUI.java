@@ -19,14 +19,27 @@ import javax.swing.JTextPane;
 import javax.swing.LayoutStyle;
 
 import edu.wheaton.paxos.logic.PostOffice;
+import edu.wheaton.paxos.utility.RunnableOfT;
 
 
 public class PostOfficeGUI extends JFrame
 {
+//	private static int m_time = 1;
+
     public PostOfficeGUI()
     {
-    	m_postOffice = new PostOffice();
+    	m_postOffice = new PostOffice(m_updateTimeDisplayRunnable);
         initComponents();
+
+//      m_postOffice.addParticipant(m_participantIdGenerator++);
+//		m_postOffice.addParticipant(m_participantIdGenerator++);
+//		m_postOffice.addParticipant(m_participantIdGenerator++);
+//		m_postOffice.addEvent(new PaxosEvent(m_time++,
+//				new PaxosMessage(0, 1, Decree.createOpaqueDecree(0, "test"))));
+//		m_postOffice.addEvent(new PaxosEvent(m_time++, 
+//				new PaxosMessage(1, 2, Decree.createOpaqueDecree(0, "ignore me"))));
+//		m_postOffice.addEvent(new PaxosEvent(m_time++, 
+//				new PaxosMessage(1, 2, Decree.createOpaqueDecree(1, "test2"))));
     }
 
     private void initComponents()
@@ -43,7 +56,7 @@ public class PostOfficeGUI extends JFrame
         TopPanel = new JPanel();
         homeButton = new JButton();
         PlayPauseButton = new JButton();
-        timeLabel = new JLabel();
+        m_timeDisplay = new JLabel();
         DetailsScrollPane = new ScrollPane();
         DetailsJScrollPane = new JScrollPane();
         ParticipantDetailsPanel = new JTextPane();
@@ -88,8 +101,6 @@ public class PostOfficeGUI extends JFrame
         PlayPauseButton.setIcon(PAUSE_ICON);
         PlayPauseButton.addActionListener(m_playPauseButtonListener);
 
-        timeLabel.setText("currentTime");
-
         GroupLayout TopPanelLayout = new GroupLayout(TopPanel);
         TopPanel.setLayout(TopPanelLayout);
         TopPanelLayout.setHorizontalGroup(
@@ -100,14 +111,14 @@ public class PostOfficeGUI extends JFrame
                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 200, Short.MAX_VALUE)
                 .addComponent(PlayPauseButton, GroupLayout.PREFERRED_SIZE, 32, GroupLayout.PREFERRED_SIZE)
                 .addGap(155, 155, 155)
-                .addComponent(timeLabel)
+                .addComponent(m_timeDisplay)
                 .addContainerGap())
         );
         TopPanelLayout.setVerticalGroup(
             TopPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(TopPanelLayout.createSequentialGroup()
                 .addGroup(TopPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                    .addComponent(timeLabel, GroupLayout.DEFAULT_SIZE, 32, Short.MAX_VALUE)
+                    .addComponent(m_timeDisplay, GroupLayout.DEFAULT_SIZE, 32, Short.MAX_VALUE)
                     .addComponent(PlayPauseButton, GroupLayout.PREFERRED_SIZE, 32, Short.MAX_VALUE)
                     .addComponent(homeButton, GroupLayout.DEFAULT_SIZE, 32, Short.MAX_VALUE))
                 .addContainerGap())
@@ -329,12 +340,20 @@ public class PostOfficeGUI extends JFrame
 		}
 	};
 
+	private final RunnableOfT<String> m_updateTimeDisplayRunnable = new RunnableOfT<String>()
+	{
+		@Override
+		public void run(String time)
+		{
+			m_timeDisplay.setText(time);
+		}
+	};
+
     private static final long serialVersionUID = -7049383055209558563L;
     private static final ImageIcon PAUSE_ICON = new ImageIcon(PostOfficeGUI.class.getResource("/images/pause2.png"));
     private static final ImageIcon PLAY_ICON = new ImageIcon(PostOfficeGUI.class.getResource("/images/play2.png"));
     
     private static int m_participantIdGenerator = 1;
-//	private static int m_time = 1;
 
     private final PostOffice m_postOffice;
 
@@ -365,6 +384,6 @@ public class PostOfficeGUI extends JFrame
     private JPanel m_participantNamePanel;
     private JLabel m_participantNameLabel;
     private JButton promoteButton;
-    private JLabel timeLabel;
+    private JLabel m_timeDisplay;
     private DefaultListModel m_listModel;
 }

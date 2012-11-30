@@ -10,10 +10,11 @@ import edu.wheaton.paxos.utility.RunnableOfT;
 
 public final class PostOffice
 {
-	public PostOffice()
+	public PostOffice(RunnableOfT<String> updateTimeDisplayRunnable)
 	{
 		m_eventQueue = Queues.newPriorityQueue();
 		m_participants = Lists.newArrayList();
+		m_updateTimeDisplayRunnable = updateTimeDisplayRunnable;
 
 		m_lock = new Object();
 		m_time = 0;
@@ -72,6 +73,7 @@ public final class PostOffice
 					{
 						PaxosEvent event = m_eventQueue.poll();
 						m_time = event.getTime();
+						m_updateTimeDisplayRunnable.run(Long.toString(m_time));
 						PaxosMessage message = event.getMessage();
 						int id = message.getRecipientId();
 						for (Participant participant : m_participants)
@@ -113,6 +115,7 @@ public final class PostOffice
 	private final Queue<PaxosEvent> m_eventQueue;
 	private final List<Participant> m_participants;
 	private final Object m_lock;
+	private final RunnableOfT<String> m_updateTimeDisplayRunnable;
 
 	private volatile boolean m_stopped;
 	private volatile boolean m_paused;
