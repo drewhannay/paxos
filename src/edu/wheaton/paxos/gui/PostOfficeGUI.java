@@ -1,11 +1,12 @@
 package edu.wheaton.paxos.gui;
 import java.awt.Dimension;
 import java.awt.ScrollPane;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.AbstractListModel;
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -17,11 +18,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.LayoutStyle;
 
+import edu.wheaton.paxos.logic.PostOffice;
+
 
 public class PostOfficeGUI extends JFrame
 {
     public PostOfficeGUI()
     {
+    	m_postOffice = new PostOffice();
         initComponents();
     }
 
@@ -60,15 +64,9 @@ public class PostOfficeGUI extends JFrame
 
         setResizable(true);
         setTitle("Paxos Simulator");
-        setVisible(true);
-        ParticipantList.setModel(new AbstractListModel()
-        {
-			String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public Object getElementAt(int i) { return strings[i]; }
 
-            private static final long serialVersionUID = -6826470836069918759L;
-        });
+        m_listModel = new DefaultListModel();
+		ParticipantList.setModel(m_listModel);
         ParticipantScrollPane.setViewportView(ParticipantList);
 
         ParticipantLabel.setText("Participants");
@@ -219,11 +217,20 @@ public class PostOfficeGUI extends JFrame
         );
 
         PlusMinusPanel.setBorder(BorderFactory.createEtchedBorder());
-        PlusButton.setText("-");
+        PlusButton.setText("+");
+        PlusButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent event)
+			{
+				PlusButtonActionPerformed(event);
+			}
+		});
         
-        MinusButton.setText("+");
+        MinusButton.setText("-");
         MinusButton.addActionListener(new ActionListener()
         {
+        	@Override
             public void actionPerformed(ActionEvent event)
             {
                 MinusButtonActionPerformed(event);
@@ -238,7 +245,7 @@ public class PostOfficeGUI extends JFrame
             .addGroup(PlusMinusPanelLayout.createSequentialGroup()
                 .addComponent(PlusButton, GroupLayout.PREFERRED_SIZE, 41, GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(MinusButton, GroupLayout.DEFAULT_SIZE, 28, Short.MAX_VALUE)
+                .addComponent(MinusButton, GroupLayout.PREFERRED_SIZE, 41, Short.MAX_VALUE)
                 .addContainerGap())
         );
         PlusMinusPanelLayout.setVerticalGroup(
@@ -308,19 +315,42 @@ public class PostOfficeGUI extends JFrame
                 .addContainerGap())
         );
 
+        // Get the size of the screen
+        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+        
         pack();
+
+        // Determine the new location of the window
+        int w = getSize().width;
+        int h = getSize().height;
+        int x = (dim.width-w)/2;
+        int y = (dim.height-h)/2;
+
+        // Move the window
+        setLocation(x, y);
+
+        setVisible(true);
     }
 
-    private void EnterButtonActionPerformed(ActionEvent evt)
+    private void EnterButtonActionPerformed(ActionEvent event)
     {
         // TODO add your handling code here:
     }
 
-    private void MinusButtonActionPerformed(ActionEvent evt)
+    private void PlusButtonActionPerformed(ActionEvent event)
     {
-        // TODO add your handling code here:
+    	m_listModel.addElement("Participant " + m_participantIdGenerator);
+    	m_postOffice.addParticipant(m_participantIdGenerator++);
     }
 
+    private void MinusButtonActionPerformed(ActionEvent event)
+    {
+    	for (Object value : ParticipantList.getSelectedValues())
+    	{
+    		// TODO actually remove the participant from the PostOffice
+    		m_listModel.removeElement(value);
+    	}
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private JButton DelayButton;
@@ -356,4 +386,11 @@ public class PostOfficeGUI extends JFrame
     // End of variables declaration//GEN-END:variables
 
 	private static final long serialVersionUID = -7049383055209558563L;
+
+	private static int m_participantIdGenerator = 1;
+//	private static int m_time = 1;
+
+	private final PostOffice m_postOffice;
+
+	private DefaultListModel m_listModel;
 }
