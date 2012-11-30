@@ -3,7 +3,6 @@ package edu.wheaton.paxos.logic;
 import java.util.List;
 import java.util.Queue;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Queues;
 
@@ -11,20 +10,6 @@ import edu.wheaton.paxos.utility.RunnableOfT;
 
 public final class PostOffice
 {
-	public static void main(String[] args)
-	{
-		PostOffice postOffice = new PostOffice();
-		postOffice.addParticipant(m_participantIdGenerator++);
-		postOffice.addParticipant(m_participantIdGenerator++);
-		postOffice.addParticipant(m_participantIdGenerator++);
-		postOffice.m_eventQueue.add(new PaxosEvent(postOffice.m_time++, 
-				new PaxosMessage(0, 1, Decree.createOpaqueDecree(0, "test"))));
-		postOffice.m_eventQueue.add(new PaxosEvent(postOffice.m_time++, 
-				new PaxosMessage(1, 2, Decree.createOpaqueDecree(0, "ignore me"))));
-		postOffice.m_eventQueue.add(new PaxosEvent(postOffice.m_time++, 
-				new PaxosMessage(1, 2, Decree.createOpaqueDecree(1, "test2"))));
-	}
-
 	public PostOffice()
 	{
 		m_eventQueue = Queues.newPriorityQueue();
@@ -35,17 +20,22 @@ public final class PostOffice
 		m_mainThread.start();
 	}
 
-	private void addParticipant(int participantId)
+	public void addParticipant(int participantId)
 	{
 		Participant participant = new Participant(participantId, m_sendMessageRunnable);
 		m_participants.add(participant);
 	}
 
-	private void sendCommand(ImmutableSet<Participant> participants, CommandMessage command)
+	public void addEvent(PaxosEvent event)
 	{
-		for (Participant participant : participants)
-			participant.executeCommand(command);
+		m_eventQueue.add(event);
 	}
+
+//	private void sendCommand(ImmutableSet<Participant> participants, CommandMessage command)
+//	{
+//		for (Participant participant : participants)
+//			participant.executeCommand(command);
+//	}
 
 	private final Thread m_mainThread = new Thread(new Runnable()
 	{
@@ -108,8 +98,6 @@ public final class PostOffice
 	};
 
 	private static final int DELAY = 10;
-
-	private static int m_participantIdGenerator = 0;
 
 	private final Queue<PaxosEvent> m_eventQueue;
 	private final List<Participant> m_participants;
