@@ -21,27 +21,34 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import edu.wheaton.paxos.logic.Decree;
+import edu.wheaton.paxos.logic.PaxosEvent;
+import edu.wheaton.paxos.logic.PaxosListeners.LogUpdateListener;
+import edu.wheaton.paxos.logic.PaxosListeners.QueueUpdateListener;
+import edu.wheaton.paxos.logic.PaxosLogManager;
+import edu.wheaton.paxos.logic.PaxosMessage;
+import edu.wheaton.paxos.logic.PaxosMessageQueueManager;
 import edu.wheaton.paxos.logic.PostOffice;
 import edu.wheaton.paxos.utility.RunnableOfT;
 
 public class PostOfficeGUI extends JFrame
 {
-//	private static int m_time = 1;
+	private static int m_time = 1;
 
     public PostOfficeGUI()
     {
     	m_postOffice = new PostOffice(m_updateTimeDisplayRunnable);
         initComponents();
 
-//      m_postOffice.addParticipant(m_participantIdGenerator++);
-//		m_postOffice.addParticipant(m_participantIdGenerator++);
-//		m_postOffice.addParticipant(m_participantIdGenerator++);
+        m_plusButtonListener.actionPerformed(null);
+        m_plusButtonListener.actionPerformed(null);
+        m_plusButtonListener.actionPerformed(null);
 //		m_postOffice.addEvent(new PaxosEvent(m_time++,
 //				new PaxosMessage(0, 1, Decree.createOpaqueDecree(0, "test"))));
 //		m_postOffice.addEvent(new PaxosEvent(m_time++, 
 //				new PaxosMessage(1, 2, Decree.createOpaqueDecree(0, "ignore me"))));
 //		m_postOffice.addEvent(new PaxosEvent(m_time++, 
-//				new PaxosMessage(1, 2, Decree.createOpaqueDecree(1, "test2"))));
+//				new PaxosMessage(2, 3, Decree.createOpaqueDecree(1, "test2"))));
     }
 
     private void initComponents()
@@ -58,11 +65,9 @@ public class PostOfficeGUI extends JFrame
 
     	m_logTextPane = new JTextPane();
     	m_logJScrollPane = new JScrollPane();
-    	m_logScrollPane = new ScrollPane();
 
     	m_queueTextPane = new JTextPane();
     	m_queueJScrollPane = new JScrollPane();
-    	m_queueScrollPane = new ScrollPane();
 
     	m_participantListLabel = new JLabel();
     	m_participantNameLabel = new JLabel();
@@ -91,17 +96,11 @@ public class PostOfficeGUI extends JFrame
 
         m_participantListLabel.setText("Participants");
 
-        m_queueTextPane.setText("Queue/Events");
         m_queueTextPane.setEditable(false);
         m_queueJScrollPane.setViewportView(m_queueTextPane);
 
-        m_queueScrollPane.add(m_queueJScrollPane);
-
-        m_logTextPane.setText("Log");
         m_logTextPane.setEditable(false);
         m_logJScrollPane.setViewportView(m_logTextPane);
-
-        m_logScrollPane.add(m_logJScrollPane);
 
         m_topPanel.setBorder(BorderFactory.createEtchedBorder());
 
@@ -146,6 +145,7 @@ public class PostOfficeGUI extends JFrame
         m_promoteButton.setText("Promote");
 
         m_messagesButton.setText("Messages");
+        m_messagesButton.addActionListener(m_messageButtonListener);
 
         m_resignButton.setText("Resign");
 
@@ -255,9 +255,9 @@ public class PostOfficeGUI extends JFrame
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(m_queueScrollPane, GroupLayout.PREFERRED_SIZE, 250, GroupLayout.PREFERRED_SIZE)
+                        .addComponent(m_queueJScrollPane, GroupLayout.PREFERRED_SIZE, 250, GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(m_logScrollPane, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE))
+                        .addComponent(m_logJScrollPane, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(m_participantNamePanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
@@ -286,8 +286,8 @@ public class PostOfficeGUI extends JFrame
                             .addComponent(m_participantNamePanel, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                            .addComponent(m_logScrollPane, GroupLayout.DEFAULT_SIZE, 98, Short.MAX_VALUE)
-                            .addComponent(m_queueScrollPane, GroupLayout.DEFAULT_SIZE, 98, Short.MAX_VALUE)))
+                            .addComponent(m_logJScrollPane, GroupLayout.DEFAULT_SIZE, 98, Short.MAX_VALUE)
+                            .addComponent(m_queueJScrollPane, GroupLayout.DEFAULT_SIZE, 98, Short.MAX_VALUE)))
                     .addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addComponent(m_participantScrollPane, GroupLayout.DEFAULT_SIZE, 341, Short.MAX_VALUE)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
@@ -311,6 +311,18 @@ public class PostOfficeGUI extends JFrame
 
         setVisible(true);
     }
+
+    private final ActionListener m_messageButtonListener = new ActionListener()
+	{
+		@Override
+		public void actionPerformed(ActionEvent arg0)
+		{
+			m_postOffice.addEvent(new PaxosEvent(m_time++,
+					new PaxosMessage(1, 2, Decree.createOpaqueDecree(0, "ignore me"))));
+			m_postOffice.addEvent(new PaxosEvent(m_time++,
+					new PaxosMessage(1, 2, Decree.createOpaqueDecree(1, "ignore me again"))));
+		}
+	};
 
     private final ActionListener m_enterButtonListener = new ActionListener()
 	{
@@ -368,9 +380,34 @@ public class PostOfficeGUI extends JFrame
 		{
 			ListSelectionModel model = (ListSelectionModel) event.getSource();
 			if (model.isSelectionEmpty() || model.getMaxSelectionIndex() - model.getMinSelectionIndex() != 0)
+			{
 				m_participantNameLabel.setText("None Selected");
+				m_logTextPane.setText("");
+				m_queueTextPane.setText("");
+				m_participantDetailsTextPane.setText("");
+			}
 			else
-				m_participantNameLabel.setText(m_listModel.get(model.getMaxSelectionIndex()).toString());
+			{
+				String participantNameString = m_listModel.get(model.getMaxSelectionIndex()).toString();
+				int participantId = Integer.parseInt(participantNameString.substring(participantNameString.lastIndexOf(' ') + 1));
+				m_participantNameLabel.setText(participantNameString);
+				PaxosLogManager.addLogUpdateListener(participantId, new LogUpdateListener()
+				{
+					@Override
+					public void onLogUpdate(String updatedLog)
+					{
+						m_logTextPane.setText(updatedLog);
+					}
+				});
+				PaxosMessageQueueManager.addQueueUpdateListener(participantId, new QueueUpdateListener()
+				{
+					@Override
+					public void onQueueUpdate(String queueContents)
+					{
+						m_queueTextPane.setText(queueContents);
+					}
+				});
+			}
 
 			pack();
 		}
@@ -396,11 +433,11 @@ public class PostOfficeGUI extends JFrame
 
     private JTextPane m_logTextPane;
     private JScrollPane m_logJScrollPane;
-    private ScrollPane m_logScrollPane;
+//    private ScrollPane m_logScrollPane;
 
     private JTextPane m_queueTextPane;
     private JScrollPane m_queueJScrollPane;
-    private ScrollPane m_queueScrollPane;
+//    private ScrollPane m_queueScrollPane;
 
     private JLabel m_participantListLabel;
     private JLabel m_participantNameLabel;

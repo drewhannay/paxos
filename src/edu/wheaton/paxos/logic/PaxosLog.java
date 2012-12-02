@@ -1,16 +1,23 @@
 package edu.wheaton.paxos.logic;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.List;
 import java.util.Scanner;
+
+import com.google.common.collect.Lists;
+
+import edu.wheaton.paxos.logic.PaxosListeners.LogUpdateListener;
 
 public class PaxosLog
 {
 	public PaxosLog(int partipantId)
 	{
 		m_file = new File(partipantId + ".log");
+		m_listeners = Lists.newArrayList();
 		if (m_file.exists())
 		{
 			if (!m_file.delete())
@@ -61,9 +68,14 @@ public class PaxosLog
 
 		try
 		{
-			FileWriter writer = new FileWriter(m_file);
-			writer.append(lineToAppend);
+			BufferedWriter writer = new BufferedWriter(new FileWriter(m_file, true));
+			if (decree.getDecreeId() != 0)
+				writer.newLine();
+			writer.write(lineToAppend);
 			writer.close();
+
+			for (LogUpdateListener listener : m_listeners)
+				listener.onLogUpdate(getEntireLog());
 		}
 		catch (IOException e)
 		{
@@ -140,6 +152,28 @@ public class PaxosLog
 		return logBuilder.toString();
 	}
 
+	public String getEntireLog()
+	{
+		StringBuilder logBuilder = new StringBuilder();
+		try
+		{
+			Scanner scanner = new Scanner(m_file);
+			while (scanner.hasNextLine())
+			{
+				logBuilder.append(scanner.nextLine());
+				logBuilder.append('\n');
+			}
+
+			scanner.close();
+		}
+		catch (FileNotFoundException e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+		return logBuilder.toString();
+	}
+
 	public void update(String log)
 	{
 		int firstUnknownId = getFirstUnknownId();
@@ -152,9 +186,13 @@ public class PaxosLog
 		{
 			try
 			{
-				FileWriter writer = new FileWriter(m_file);
-				writer.append(log);
+				BufferedWriter writer = new BufferedWriter(new FileWriter(m_file, true));
+				writer.newLine();
+				writer.write(log);
 				writer.close();
+
+				for (LogUpdateListener listener : m_listeners)
+					listener.onLogUpdate(getEntireLog());
 			}
 			catch (IOException e)
 			{
@@ -163,5 +201,17 @@ public class PaxosLog
 		}
 	}
 
+	public void addLogUpdateListener(LogUpdateListener listener)
+	{
+		m_listeners.add(listener);
+		listener.onLogUpdate(getEntireLog());
+	}
+
+	public void removeLogUpdateListener(LogUpdateListener listener)
+	{
+		m_listeners.remove(listener);
+	}
+
 	private final File m_file;
+	private final List<LogUpdateListener> m_listeners;
 }

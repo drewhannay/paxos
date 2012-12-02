@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 
 public class Decree
 {
-	public static final String DELIMITER = " ### ";
+	public static final String DELIMITER = " | ";
 	public static final int NO_ID = -1;
 
 	private Decree(int id, DecreeType decreeType, String value, int logId, int interval)

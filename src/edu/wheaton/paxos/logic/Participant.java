@@ -1,14 +1,14 @@
 package edu.wheaton.paxos.logic;
 
+import java.io.Closeable;
 import java.util.List;
 import java.util.Queue;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Queues;
 
 import edu.wheaton.paxos.utility.RunnableOfT;
 
-public final class Participant
+public final class Participant implements Closeable
 {
 	public Participant(int id, RunnableOfT<PaxosMessage> sendMessageRunnable)
 	{
@@ -16,15 +16,21 @@ public final class Participant
 		m_id = id;
 		
 		m_clock = new Clock();
-		m_log = new PaxosLog(m_id);
+		m_log = PaxosLogManager.createPaxosLog(m_id);
 
 		m_lock = new Object();
 		m_stopped = false;
 		m_paused = false;
 
-		m_inbox = Queues.newArrayDeque();
+		m_inbox = PaxosMessageQueueManager.createPaxosMessageQueue(m_id);
 		m_participants = Lists.newArrayList();
 		m_mainThread.start();
+	}
+
+	@Override
+	public void close()
+	{
+		// TODO Auto-generated method stub	
 	}
 
 	public int getId()
@@ -250,7 +256,7 @@ public final class Participant
 	private boolean m_isPresent;
 
 	// volatile state
-	private final Queue<PaxosMessage> m_inbox;
+	private final PaxosQueue<PaxosMessage> m_inbox;
 	private final List<Integer> m_participants;
 
 	private final Object m_lock;
