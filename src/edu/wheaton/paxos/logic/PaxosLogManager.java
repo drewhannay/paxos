@@ -26,6 +26,11 @@ public final class PaxosLogManager
 		m_logs.get(Integer.valueOf(participantId)).removeLogUpdateListener(listener);
 	}
 
+	public static void closeLog(int participantId)
+	{
+		m_logs.remove(Integer.valueOf(participantId));
+	}
+
 	private PaxosLogManager() { }
 
 	private static final Map<Integer, PaxosLog> m_logs = Maps.newHashMap();

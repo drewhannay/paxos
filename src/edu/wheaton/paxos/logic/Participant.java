@@ -2,7 +2,6 @@ package edu.wheaton.paxos.logic;
 
 import java.io.Closeable;
 import java.util.List;
-import java.util.Queue;
 
 import com.google.common.collect.Lists;
 
@@ -30,7 +29,8 @@ public final class Participant implements Closeable
 	@Override
 	public void close()
 	{
-		// TODO Auto-generated method stub	
+		PaxosLogManager.closeLog(m_id);
+		PaxosMessageQueueManager.closeQueue(m_id);
 	}
 
 	public int getId()

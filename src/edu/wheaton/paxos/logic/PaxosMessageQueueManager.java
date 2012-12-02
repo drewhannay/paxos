@@ -29,6 +29,11 @@ public final class PaxosMessageQueueManager
 		m_queues.get(Integer.valueOf(participantId)).removeQueueUpdateListener(listener);
 	}
 
+	public static void closeQueue(int participantId)
+	{
+		m_queues.remove(Integer.valueOf(participantId));
+	}
+
 	private PaxosMessageQueueManager() { }
 
 	private static final Map<Integer, PaxosQueue<PaxosMessage>> m_queues = Maps.newHashMap();
