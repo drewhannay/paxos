@@ -38,7 +38,9 @@ public final class PaxosQueue<E>
 
 	public E poll()
 	{
-		return m_queue.poll();
+		E e = m_queue.poll();
+		queueUpdated();
+		return e;
 	}
 
 	public Iterator<E> iterator()
