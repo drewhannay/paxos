@@ -24,7 +24,6 @@ import javax.swing.event.ListSelectionListener;
 import edu.wheaton.paxos.logic.PostOffice;
 import edu.wheaton.paxos.utility.RunnableOfT;
 
-
 public class PostOfficeGUI extends JFrame
 {
 //	private static int m_time = 1;
@@ -47,34 +46,40 @@ public class PostOfficeGUI extends JFrame
 
     private void initComponents()
     {
-        m_participantScrollPane = new JScrollPane();
-        m_participantList = new JList();
-        m_participantListLabel = new JLabel();
-        m_queueScrollPane = new ScrollPane();
-        m_queueJScrollPane = new JScrollPane();
-        m_queueTextPane = new JTextPane();
-        m_logScrollPane = new ScrollPane();
-        m_logJScrollPane = new JScrollPane();
-        m_logTextPane = new JTextPane();
-        m_topPanel = new JPanel();
-        m_homeButton = new JButton();
+    	m_topPanel = new JPanel();
+    	m_participantNamePanel = new JPanel();
+    	m_operationsPanel = new JPanel();
+    	m_plusMinusPanel = new JPanel();
+
+    	m_participantDetailsTextPane = new JTextPane();
+    	m_participantScrollPane = new JScrollPane();
+    	m_detailsJScrollPane = new JScrollPane();
+    	m_detailsScrollPane = new ScrollPane();
+
+    	m_logTextPane = new JTextPane();
+    	m_logJScrollPane = new JScrollPane();
+    	m_logScrollPane = new ScrollPane();
+
+    	m_queueTextPane = new JTextPane();
+    	m_queueJScrollPane = new JScrollPane();
+    	m_queueScrollPane = new ScrollPane();
+
+    	m_participantListLabel = new JLabel();
+    	m_participantNameLabel = new JLabel();
+    	m_timeDisplay = new JLabel();
+
+    	m_homeButton = new JButton();
         m_playPauseButton = new JButton();
-        m_timeDisplay = new JLabel();
-        m_detailsScrollPane = new ScrollPane();
-        m_detailsJScrollPane = new JScrollPane();
-        m_participantDetailsTextPane = new JTextPane();
-        m_operationsPanel = new JPanel();
+        m_plusButton = new JButton();
+        m_minusButton = new JButton();
         m_promoteButton = new JButton();
         m_messagesButton = new JButton();
         m_resignButton = new JButton();
         m_enterButton = new JButton();
         m_delayButton = new JButton();
         m_leaveButton = new JButton();
-        m_participantNamePanel = new JPanel();
-        m_participantNameLabel = new JLabel();
-        m_plusMinusPanel = new JPanel();
-        m_plusButton = new JButton();
-        m_minusButton = new JButton();
+
+        m_participantList = new JList();
 
         setResizable(true);
         setTitle("Paxos Simulator");
@@ -87,11 +92,13 @@ public class PostOfficeGUI extends JFrame
         m_participantListLabel.setText("Participants");
 
         m_queueTextPane.setText("Queue/Events");
+        m_queueTextPane.setEditable(false);
         m_queueJScrollPane.setViewportView(m_queueTextPane);
 
         m_queueScrollPane.add(m_queueJScrollPane);
 
         m_logTextPane.setText("Log");
+        m_logTextPane.setEditable(false);
         m_logJScrollPane.setViewportView(m_logTextPane);
 
         m_logScrollPane.add(m_logJScrollPane);
@@ -129,6 +136,7 @@ public class PostOfficeGUI extends JFrame
         );
 
         m_participantDetailsTextPane.setText("Participant Details");
+        m_participantDetailsTextPane.setEditable(false);
         m_detailsJScrollPane.setViewportView(m_participantDetailsTextPane);
 
         m_detailsScrollPane.add(m_detailsJScrollPane);
