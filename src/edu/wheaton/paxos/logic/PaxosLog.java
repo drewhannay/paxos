@@ -17,6 +17,7 @@ public class PaxosLog
 	public PaxosLog(int partipantId)
 	{
 		m_file = new File(partipantId + ".log");
+		m_firstLogId = -1;
 		m_listeners = Lists.newArrayList();
 		if (m_file.exists())
 		{
@@ -36,23 +37,24 @@ public class PaxosLog
 		}
 	}
 
-	public int getFirstLogId()
+	public int getFirstLogId(boolean forceRescan)
 	{
-		Scanner scanner;
-		int firstLogId = 0;
-		try
+		if (m_firstLogId < 0 || forceRescan)
 		{
-			scanner = new Scanner(m_file);
-			String line = scanner.nextLine();
-			firstLogId = Integer.parseInt(line.substring(0, line.indexOf(Decree.DELIMITER)));
-			scanner.close();
+			m_firstLogId = 0;
+			try
+			{
+				Scanner scanner = new Scanner(m_file);
+				String line = scanner.nextLine();
+				m_firstLogId = Integer.parseInt(line.substring(0, line.indexOf(Decree.DELIMITER)));
+				scanner.close();
+			}
+			catch (FileNotFoundException e)
+			{
+				e.printStackTrace();
+			}
 		}
-		catch (FileNotFoundException e)
-		{
-			e.printStackTrace();
-		}
-
-		return firstLogId;
+		return m_firstLogId;
 	}
 
 	public int getFirstUnknownId()
@@ -214,4 +216,6 @@ public class PaxosLog
 
 	private final File m_file;
 	private final List<LogUpdateListener> m_listeners;
+
+	private int m_firstLogId;
 }
