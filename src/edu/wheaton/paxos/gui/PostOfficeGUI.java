@@ -105,8 +105,10 @@ public class PostOfficeGUI extends JFrame
         m_topPanel.setBorder(BorderFactory.createEtchedBorder());
 
         m_homeButton.setIcon(new ImageIcon(getClass().getResource("/images/home1.png")));
-        m_homeButton.setMinimumSize(new Dimension(10, 10));
-        m_homeButton.setPreferredSize(new Dimension(10, 10));
+        Dimension homeButtonDimension = new Dimension(10, 10);
+		m_homeButton.setMinimumSize(homeButtonDimension);
+        m_homeButton.setPreferredSize(homeButtonDimension);
+        m_homeButton.addActionListener(m_homeButtonListener);
 
         m_playPauseButton.setIcon(PAUSE_ICON);
         m_playPauseButton.addActionListener(m_playPauseButtonListener);
@@ -143,18 +145,22 @@ public class PostOfficeGUI extends JFrame
         m_operationsPanel.setBorder(BorderFactory.createEtchedBorder());
 
         m_promoteButton.setText("Promote");
+        m_promoteButton.addActionListener(m_promoteButtonListener);
 
         m_messagesButton.setText("Messages");
         m_messagesButton.addActionListener(m_messageButtonListener);
 
         m_resignButton.setText("Resign");
+        m_resignButton.addActionListener(m_resignButtonListener);
 
         m_enterButton.setText("Enter");
         m_enterButton.addActionListener(m_enterButtonListener);
 
         m_delayButton.setText("Delay");
+        m_delayButton.addActionListener(m_delayButtonListener);
 
         m_leaveButton.setText("Leave");
+        m_leaveButton.addActionListener(m_leaveButtonListener);
 
         GroupLayout OperationsPanelLayout = new GroupLayout(m_operationsPanel);
         m_operationsPanel.setLayout(OperationsPanelLayout);
@@ -312,6 +318,24 @@ public class PostOfficeGUI extends JFrame
         setVisible(true);
     }
 
+    private final ActionListener m_homeButtonListener = new ActionListener()
+	{
+		@Override
+		public void actionPerformed(ActionEvent e)
+		{
+			// TODO Auto-generated method stub
+		}
+	};
+
+    private final ActionListener m_promoteButtonListener = new ActionListener()
+	{
+		@Override
+		public void actionPerformed(ActionEvent event)
+		{
+			// TODO Auto-generated method stub
+		}
+	};
+
     private final ActionListener m_messageButtonListener = new ActionListener()
 	{
 		@Override
@@ -324,6 +348,15 @@ public class PostOfficeGUI extends JFrame
 		}
 	};
 
+	private final ActionListener m_resignButtonListener = new ActionListener()
+	{
+		@Override
+		public void actionPerformed(ActionEvent e)
+		{
+			// TODO Auto-generated method stub
+		}
+	};
+
     private final ActionListener m_enterButtonListener = new ActionListener()
 	{
 		@Override
@@ -332,6 +365,25 @@ public class PostOfficeGUI extends JFrame
 			// TODO Auto-generated method stub
 		}
 	};
+
+	private final ActionListener m_delayButtonListener = new ActionListener()
+	{
+		@Override
+		public void actionPerformed(ActionEvent e)
+		{
+			// TODO Auto-generated method stub
+		}
+	};
+
+	private final ActionListener m_leaveButtonListener = new ActionListener()
+	{
+		@Override
+		public void actionPerformed(ActionEvent e)
+		{
+			// TODO Auto-generated method stub
+		}
+	};
+
     private final ActionListener m_plusButtonListener = new ActionListener()
 	{
 		@Override
