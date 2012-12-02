@@ -40,6 +40,13 @@ public final class PostOffice
 	{
 		sendCommand(m_participants, CommandMessage.TOGGLE_PAUSE_STATE);
 		m_paused = !m_paused;
+		if (!m_paused)
+		{
+			synchronized (m_lock)
+			{
+				m_lock.notifyAll();
+			}
+		}
 		return m_paused;
 	}
 

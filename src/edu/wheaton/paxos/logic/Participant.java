@@ -240,10 +240,6 @@ public final class Participant implements Closeable
 						e.printStackTrace();
 					}
 				}
-				else
-				{
-					return;
-				}
 			}
 		}
 	});
