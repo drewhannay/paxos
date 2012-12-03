@@ -27,7 +27,6 @@ import edu.wheaton.paxos.logic.PaxosListeners.QueueUpdateListener;
 import edu.wheaton.paxos.logic.PaxosLogManager;
 import edu.wheaton.paxos.logic.PaxosMessage;
 import edu.wheaton.paxos.logic.PaxosMessageQueueManager;
-import edu.wheaton.paxos.logic.PaxosQueue;
 import edu.wheaton.paxos.logic.PostOffice;
 import edu.wheaton.paxos.utility.RunnableOfT;
 
@@ -67,6 +66,7 @@ public class PostOfficeGUI extends JFrame
     	m_queueJScrollPane = new JScrollPane();
 
     	m_timeDisplay = new JLabel();
+    	m_timeDisplay.setText("Time: 0");
 
     	m_homeButton = new JButton();
         m_playPauseButton = new JButton();
