@@ -23,6 +23,7 @@ import javax.swing.event.ListSelectionListener;
 import edu.wheaton.paxos.logic.Decree;
 import edu.wheaton.paxos.logic.PaxosEvent;
 import edu.wheaton.paxos.logic.PaxosListeners.LogUpdateListener;
+import edu.wheaton.paxos.logic.PaxosListeners.ParticipantDetailsListener;
 import edu.wheaton.paxos.logic.PaxosListeners.QueueUpdateListener;
 import edu.wheaton.paxos.logic.PaxosLogManager;
 import edu.wheaton.paxos.logic.PaxosMessage;
@@ -410,6 +411,7 @@ public class PostOfficeGUI extends JFrame
 			{
 				PaxosLogManager.removeLogUpdateListener(m_selectedParticipantId, m_logUpdateListener);
 				PaxosMessageQueueManager.removeQueueUpdateListener(m_selectedParticipantId, m_queueUpdateListener);
+				m_postOffice.removeParticipantDetailsListener(m_selectedParticipantId, m_participantDetailsListener);
 			}
 
 			ListSelectionModel model = (ListSelectionModel) event.getSource();
@@ -443,12 +445,22 @@ public class PostOfficeGUI extends JFrame
 					}
 				};
 				PaxosMessageQueueManager.addQueueUpdateListener(m_selectedParticipantId, m_queueUpdateListener);
+				m_participantDetailsListener = new ParticipantDetailsListener()
+				{
+					@Override
+					public void onParticipantDetailsUpdate(String participantDetails)
+					{
+						m_participantDetailsTextPane.setText(participantDetails);
+					}
+				};
+				m_postOffice.addParticipantDetailsListener(m_selectedParticipantId, m_participantDetailsListener);
 			}
 		}
 
 	    private int m_selectedParticipantId;
 	    private LogUpdateListener m_logUpdateListener;
 	    private QueueUpdateListener m_queueUpdateListener;
+	    private ParticipantDetailsListener m_participantDetailsListener;
 	};
 
     private static final long serialVersionUID = -7049383055209558563L;

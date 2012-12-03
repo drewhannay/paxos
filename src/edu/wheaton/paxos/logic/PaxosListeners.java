@@ -14,4 +14,9 @@ public final class PaxosListeners
 		public void onQueueUpdate(String queueContents);
 	}
 
+	public interface ParticipantDetailsListener
+	{
+		public void onParticipantDetailsUpdate(String participantDetails);
+	}
+
 }

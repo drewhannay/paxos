@@ -6,6 +6,7 @@ import java.util.Queue;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Queues;
 
+import edu.wheaton.paxos.logic.PaxosListeners.ParticipantDetailsListener;
 import edu.wheaton.paxos.utility.RunnableOfT;
 
 public final class PostOffice
@@ -27,9 +28,36 @@ public final class PostOffice
 
 		// TODO: this needs to go away; participants should call join when they are added
 		for (Participant other : m_participants)
+		{
 			other.addParticipant(participantId);
+			participant.addParticipant(other.getId());
+		}
 
 		m_participants.add(participant);
+	}
+
+	public void addParticipantDetailsListener(int participantId, ParticipantDetailsListener listener)
+	{
+		for (Participant participant : m_participants)
+		{
+			if (participant.getId() == participantId)
+			{
+				participant.addParticipantDetailsListener(listener);
+				return;
+			}
+		}
+	}
+
+	public void removeParticipantDetailsListener(int participantId, ParticipantDetailsListener listener)
+	{
+		for (Participant participant : m_participants)
+		{
+			if (participant.getId() == participantId)
+			{
+				participant.removeParticipantDetailsListener(listener);
+				return;
+			}
+		}
 	}
 
 	public void addEvent(PaxosEvent event)

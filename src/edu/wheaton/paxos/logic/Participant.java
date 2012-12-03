@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.google.common.collect.Lists;
 
+import edu.wheaton.paxos.logic.PaxosListeners.ParticipantDetailsListener;
 import edu.wheaton.paxos.utility.RunnableOfT;
 
 public final class Participant implements Closeable
@@ -12,6 +13,7 @@ public final class Participant implements Closeable
 	public Participant(int id, RunnableOfT<PaxosMessage> sendMessageRunnable)
 	{
 		m_sendMessageRunnable = sendMessageRunnable;
+		m_listeners = Lists.newArrayList();
 		m_id = id;
 		m_leaderId = 1;
 		
@@ -38,6 +40,16 @@ public final class Participant implements Closeable
 	public void addParticipant(int participantId)
 	{
 		m_participants.add(participantId);
+	}
+
+	public void addParticipantDetailsListener(ParticipantDetailsListener listener)
+	{
+		m_listeners.add(listener);
+	}
+
+	public void removeParticipantDetailsListener(ParticipantDetailsListener listener)
+	{
+		m_listeners.remove(listener);
 	}
 
 	public int getId()
@@ -101,6 +113,8 @@ public final class Participant implements Closeable
 //					// receive (interval)
 					else
 						receive(100);
+
+					updateDetails();
 				}
 
 				synchronized (m_lock)
@@ -256,7 +270,41 @@ public final class Participant implements Closeable
 		}
 	});
 
+	private void updateDetails()
+	{
+		for (int i = 0; i < m_listeners.size(); i++)
+		{
+			StringBuilder builder = new StringBuilder();
+			builder.append("Leader ID: ")
+			.append(m_leaderId)
+			.append('\n')
+			.append("Leader Interval: ")
+			.append(m_leaderInterval)
+			.append('\n')
+			.append("Participant List: ")
+			.append(m_participants.toString())
+			.append('\n')
+			.append("Promised Number: ")
+			.append(m_promisedNumber)
+			.append('\n')
+			.append("Highest Seen Number: ")
+			.append(m_highestSeenNumber)
+			.append('\n')
+			.append("Joined: ")
+			.append(m_hasJoined)
+			.append('\n')
+			.append("Present: ")
+			.append(m_isPresent)
+			.append('\n');
+			
+
+			String participantDetails = builder.toString();
+			m_listeners.get(i).onParticipantDetailsUpdate(participantDetails);
+		}
+	}
+
 	private final RunnableOfT<PaxosMessage> m_sendMessageRunnable;
+	private final List<ParticipantDetailsListener> m_listeners;
 	// housekeeping
 	private final int m_id;
 	private final Clock m_clock;
