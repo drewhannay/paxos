@@ -24,16 +24,7 @@ public final class PostOffice
 
 	public void addParticipant(int participantId)
 	{
-		Participant participant = new Participant(participantId, m_sendMessageRunnable);
-
-		// TODO: this needs to go away; participants should call join when they are added
-		for (Participant other : m_participants)
-		{
-			other.addParticipant(participantId);
-			participant.addParticipant(other.getId());
-		}
-
-		m_participants.add(participant);
+		m_participants.add(new Participant(participantId, m_sendMessageRunnable, m_participants));
 	}
 
 	public void addParticipantDetailsListener(int participantId, ParticipantDetailsListener listener)

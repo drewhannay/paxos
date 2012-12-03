@@ -20,20 +20,17 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import edu.wheaton.paxos.logic.Decree;
-import edu.wheaton.paxos.logic.PaxosEvent;
 import edu.wheaton.paxos.logic.PaxosListeners.LogUpdateListener;
 import edu.wheaton.paxos.logic.PaxosListeners.ParticipantDetailsListener;
 import edu.wheaton.paxos.logic.PaxosListeners.QueueUpdateListener;
 import edu.wheaton.paxos.logic.PaxosLogManager;
-import edu.wheaton.paxos.logic.PaxosMessage;
 import edu.wheaton.paxos.logic.PaxosMessageQueueManager;
 import edu.wheaton.paxos.logic.PostOffice;
 import edu.wheaton.paxos.utility.RunnableOfT;
 
 public class PostOfficeGUI extends JFrame
 {
-	private static int m_time = 1;
+//	private static int m_time = 1;
 
     public PostOfficeGUI()
     {
@@ -318,10 +315,7 @@ public class PostOfficeGUI extends JFrame
 		@Override
 		public void actionPerformed(ActionEvent arg0)
 		{
-			m_postOffice.addEvent(new PaxosEvent(m_time++,
-					new PaxosMessage(1, 2, Decree.createOpaqueDecree(0, "ignore me"))));
-			m_postOffice.addEvent(new PaxosEvent(m_time++,
-					new PaxosMessage(1, 2, Decree.createOpaqueDecree(1, "ignore me again"))));
+			// TODO Auto-generated method stub
 		}
 	};
 

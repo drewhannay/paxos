@@ -3,6 +3,7 @@ package edu.wheaton.paxos.logic;
 import java.io.Closeable;
 import java.util.List;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
 import edu.wheaton.paxos.logic.PaxosListeners.ParticipantDetailsListener;
@@ -10,10 +11,11 @@ import edu.wheaton.paxos.utility.RunnableOfT;
 
 public final class Participant implements Closeable
 {
-	public Participant(int id, RunnableOfT<PaxosMessage> sendMessageRunnable)
+	public Participant(int id, RunnableOfT<PaxosMessage> sendMessageRunnable, List<Participant> potentialParticipants)
 	{
 		m_sendMessageRunnable = sendMessageRunnable;
 		m_listeners = Lists.newArrayList();
+		m_potentialParticipants = potentialParticipants;
 		m_id = id;
 		m_leaderId = 1;
 		
@@ -23,6 +25,17 @@ public final class Participant implements Closeable
 		m_lock = new Object();
 		m_stopped = false;
 		m_paused = false;
+
+		if (m_potentialParticipants.size() == 0)
+		{
+			m_highestSeenNumber = 1;
+			Decree decree = Decree.createSetLeaderDecree(m_highestSeenNumber, m_id, LEADER_INTERVAL);
+			m_leaderId = Integer.parseInt(decree.getDecreeValue());
+			m_leaderExpiry = decree.getLeaderExpiry();
+			m_log.recordDecree(decree);
+			m_hasJoined = true;
+			m_isPresent = true;
+		}
 
 		m_inbox = PaxosMessageQueueManager.createPaxosMessageQueue(m_id);
 		m_participants = Lists.newCopyOnWriteArrayList();
@@ -34,12 +47,6 @@ public final class Participant implements Closeable
 	{
 		PaxosLogManager.closeLog(m_id);
 		PaxosMessageQueueManager.closeQueue(m_id);
-	}
-
-	// TODO: we shouldn't need this method...make it go away
-	public void addParticipant(int participantId)
-	{
-		m_participants.add(participantId);
 	}
 
 	public void addParticipantDetailsListener(ParticipantDetailsListener listener)
@@ -134,9 +141,9 @@ public final class Participant implements Closeable
 
 		private void join()
 		{
-			Decree decree = Decree.createRequestLogDecree(m_log.getLatestLogId());
-			for (Integer recipientId : m_participants)
-				m_sendMessageRunnable.run(new PaxosMessage(m_id, recipientId.intValue(), decree));			
+			Preconditions.checkArgument(!m_hasJoined);
+
+//			m_sendMessageRunnable.run(new PaxosMessage(m_id, m_leaderId, Decree.createAddParticipantDecree(Decree.NO_ID, m_id)));
 		}
 
 		private void resign()
@@ -149,20 +156,19 @@ public final class Participant implements Closeable
 				int messageId = Math.max(m_highestSeenNumber, m_promisedNumber) + 1;
 				m_highestSeenNumber = messageId;
 
-				for (Integer recipientId : m_participants)
-					m_sendMessageRunnable.run(new PaxosMessage(m_id, recipientId.intValue(), decree));
+//				for (Integer recipientId : m_participants)
+//					m_sendMessageRunnable.run(new PaxosMessage(m_id, recipientId.intValue(), decree));
 			}
 			else
 			{
-				m_sendMessageRunnable.run(new PaxosMessage(m_id, m_leaderId, decree));
+//				m_sendMessageRunnable.run(new PaxosMessage(m_id, m_leaderId, decree));
 			}
 		}
 
 		private void enter()
 		{
-			Decree decree = Decree.createRequestLogDecree(m_log.getLatestLogId());
 			for (Integer recipientId : m_participants)
-				m_sendMessageRunnable.run(new PaxosMessage(m_id, recipientId.intValue(), decree));
+				m_sendMessageRunnable.run(PaxosMessage.createRequestLogMessage(m_id, recipientId, m_log.getLatestLogId()));
 		}
 
 		private void leave(boolean withAmnesia)
@@ -198,14 +204,14 @@ public final class Participant implements Closeable
 
 				Decree decree = Decree.createOpaqueDecree(messageId, "Leader-Initiated Decree");
 				m_log.recordDecree(decree);
-				for (Integer recipientId : m_participants)
-					m_sendMessageRunnable.run(new PaxosMessage(m_id, recipientId.intValue(), decree));
+//				for (Integer recipientId : m_participants)
+//					m_sendMessageRunnable.run(new PaxosMessage(m_id, recipientId.intValue(), decree));
 			}
 			else
 			{
-				PaxosMessage message = new PaxosMessage(m_id, m_leaderId,
-						Decree.createOpaqueDecree(Decree.NO_ID, "Woo!"));
-				m_sendMessageRunnable.run(message);
+//				PaxosMessage message = new PaxosMessage(m_id, m_leaderId,
+//						Decree.createOpaqueDecree(Decree.NO_ID, "Woo!"));
+//				m_sendMessageRunnable.run(message);
 			}
 		}
 
@@ -214,39 +220,46 @@ public final class Participant implements Closeable
 			if (!m_inbox.isEmpty())
 			{
 				PaxosMessage message = m_inbox.poll();
-				Decree decree = message.getDecree();
-				Decree responseDecree;
-				switch (decree.getDecreeType())
+				PaxosMessage responseMessage;
+				switch (message.getMessageType())
 				{
-				case OPAQUE_DECREE:
-					// TODO if you're the leader and you're receiving a request to send a decree, what do we do here?
-					m_log.recordDecree(decree);
+//				case OPAQUE_DECREE:
+//					// TODO if you're the leader and you're receiving a request to send a decree, what do we do here?
+//					m_log.recordDecree(decree);
+//					break;
+//				case ADD_PARTICIPANT:
+//					break;
+//				case REMOVE_PARTICIPANT:
+////					int removeId = Integer.parseInt(decree.getDecreeValue());
+////					m_participants.remove(removeId);
+//					break;
+//				case SET_LEADER:
+//					m_leaderId = Integer.parseInt(decree.getDecreeValue());
+//					m_leaderExpiry = decree.getLeaderExpiry();
+//					m_log.recordDecree(decree);
+//					// TODO maintain interval
+//					break;
+				case DECREE_COMMIT:
+					// TODO
 					break;
-				case ADD_PARTICIPANT:
-					break;
-				case REMOVE_PARTICIPANT:
-//					int removeId = Integer.parseInt(decree.getDecreeValue());
-//					m_participants.remove(removeId);
-					break;
-				case SET_LEADER:
-					m_leaderId = Integer.parseInt(decree.getDecreeValue());
-					m_leaderInterval = decree.getInterval();
-					m_log.recordDecree(decree);
-					// TODO maintain interval
+				case DECREE_REQUEST:
+					// TODO
 					break;
 				case REQUEST_LOG:
-					if (m_log.getLatestLogId() > decree.getLogId())
+					if (m_log.getLatestLogId() > message.getLogId())
 					{
-						responseDecree = Decree.createSendLogDecree(m_log.getLogSinceId(decree.getLogId()), m_log.getLatestLogId());
-						m_sendMessageRunnable.run(new PaxosMessage(m_id, message.getSenderId(), responseDecree));
+						responseMessage = PaxosMessage.createSendLogMessage(m_id, message.getSenderId(), 
+								m_log.getLogSinceId(message.getLogId()), m_log.getLatestLogId()); 
+						m_sendMessageRunnable.run(responseMessage);
 					}
 					break;
 				case SEND_LOG:
-					m_log.update(decree.getDecreeValue());
-					if (m_log.getLatestLogId() < decree.getLogId())
+					// TODO process any decrees that are added
+					m_log.update(message.getLogData());
+					if (m_log.getLatestLogId() < message.getLogId())
 					{
-						responseDecree = Decree.createRequestLogDecree(m_log.getLatestLogId());
-						m_sendMessageRunnable.run(new PaxosMessage(m_id, message.getSenderId(), responseDecree));
+						responseMessage = PaxosMessage.createRequestLogMessage(m_id, message.getSenderId(), m_log.getLatestLogId()); 
+						m_sendMessageRunnable.run(responseMessage);
 					}
 					break;
 				}
@@ -278,7 +291,7 @@ public final class Participant implements Closeable
 			.append(m_leaderId)
 			.append('\n')
 			.append("Leader Interval: ")
-			.append(m_leaderInterval)
+			.append(m_leaderExpiry)
 			.append('\n')
 			.append("Participant List: ")
 			.append(m_participants.toString())
@@ -302,8 +315,11 @@ public final class Participant implements Closeable
 		}
 	}
 
+	private static final int LEADER_INTERVAL = 30;
+
 	private final RunnableOfT<PaxosMessage> m_sendMessageRunnable;
 	private final List<ParticipantDetailsListener> m_listeners;
+	private final List<Participant> m_potentialParticipants;
 	// housekeeping
 	private final int m_id;
 	private final Clock m_clock;
@@ -325,5 +341,5 @@ public final class Participant implements Closeable
 
 	// Paxos-maintained state
 	private int m_leaderId;
-	private int m_leaderInterval;
+	private int m_leaderExpiry;
 }
