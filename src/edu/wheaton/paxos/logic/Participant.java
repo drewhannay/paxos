@@ -25,7 +25,7 @@ public final class Participant implements Closeable
 		m_paused = false;
 
 		m_inbox = PaxosMessageQueueManager.createPaxosMessageQueue(m_id);
-		m_participants = Lists.newArrayList();
+		m_participants = Lists.newCopyOnWriteArrayList();
 		m_mainThread.start();
 	}
 
@@ -221,7 +221,6 @@ public final class Participant implements Closeable
 				case OPAQUE_DECREE:
 					// TODO if you're the leader and you're receiving a request to send a decree, what do we do here?
 					m_log.recordDecree(decree);
-					System.out.println(decree.toString());
 					break;
 				case ADD_PARTICIPANT:
 					break;
