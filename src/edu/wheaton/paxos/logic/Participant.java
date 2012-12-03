@@ -13,6 +13,7 @@ public final class Participant implements Closeable
 	{
 		m_sendMessageRunnable = sendMessageRunnable;
 		m_id = id;
+		m_leaderId = 1;
 		
 		m_clock = new Clock();
 		m_log = PaxosLogManager.createPaxosLog(m_id);
@@ -31,6 +32,12 @@ public final class Participant implements Closeable
 	{
 		PaxosLogManager.closeLog(m_id);
 		PaxosMessageQueueManager.closeQueue(m_id);
+	}
+
+	// TODO: we shouldn't need this method...make it go away
+	public void addParticipant(int participantId)
+	{
+		m_participants.add(participantId);
 	}
 
 	public int getId()
@@ -77,6 +84,7 @@ public final class Participant implements Closeable
 					// TODO: pick one of these
 					// Note: if you have "left", your only options should be enter() or delay()
 
+					double choice = Math.random();
 //					// join
 //					join();
 //					// resign
@@ -88,9 +96,11 @@ public final class Participant implements Closeable
 //					// delay
 //					delay(10);
 //					// initiate proposal
-//					initiateProposal();
+					if (choice < 0.1 && m_leaderId == m_id)
+						initiateProposal();
 //					// receive (interval)
-					receive(10);
+					else
+						receive(100);
 				}
 
 				synchronized (m_lock)
@@ -172,13 +182,14 @@ public final class Participant implements Closeable
 				int messageId = Math.max(m_highestSeenNumber, m_promisedNumber) + 1;
 				m_highestSeenNumber = messageId;
 
-				Decree decree = Decree.createOpaqueDecree(messageId, "Leader Decree");
+				Decree decree = Decree.createOpaqueDecree(messageId, "Leader-Initiated Decree");
+				m_log.recordDecree(decree);
 				for (Integer recipientId : m_participants)
 					m_sendMessageRunnable.run(new PaxosMessage(m_id, recipientId.intValue(), decree));
 			}
 			else
 			{
-				PaxosMessage message = new PaxosMessage(m_id, m_leaderId, 
+				PaxosMessage message = new PaxosMessage(m_id, m_leaderId,
 						Decree.createOpaqueDecree(Decree.NO_ID, "Woo!"));
 				m_sendMessageRunnable.run(message);
 			}
@@ -194,6 +205,7 @@ public final class Participant implements Closeable
 				switch (decree.getDecreeType())
 				{
 				case OPAQUE_DECREE:
+					// TODO if you're the leader and you're receiving a request to send a decree, what do we do here?
 					m_log.recordDecree(decree);
 					System.out.println(decree.toString());
 					break;

@@ -24,6 +24,11 @@ public final class PostOffice
 	public void addParticipant(int participantId)
 	{
 		Participant participant = new Participant(participantId, m_sendMessageRunnable);
+
+		// TODO: this needs to go away; participants should call join when they are added
+		for (Participant other : m_participants)
+			other.addParticipant(participantId);
+
 		m_participants.add(participant);
 	}
 
@@ -113,7 +118,7 @@ public final class PostOffice
 		public void run(PaxosMessage message)
 		{
 			// TODO: Randomize success
-			m_eventQueue.add(new PaxosEvent(m_time + DELAY, message));
+			addEvent(new PaxosEvent(m_time + DELAY, message));
 		}
 	};
 

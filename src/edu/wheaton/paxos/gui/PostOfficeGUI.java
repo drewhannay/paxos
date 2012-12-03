@@ -1,6 +1,5 @@
 package edu.wheaton.paxos.gui;
 import java.awt.Dimension;
-import java.awt.ScrollPane;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -28,6 +27,7 @@ import edu.wheaton.paxos.logic.PaxosListeners.QueueUpdateListener;
 import edu.wheaton.paxos.logic.PaxosLogManager;
 import edu.wheaton.paxos.logic.PaxosMessage;
 import edu.wheaton.paxos.logic.PaxosMessageQueueManager;
+import edu.wheaton.paxos.logic.PaxosQueue;
 import edu.wheaton.paxos.logic.PostOffice;
 import edu.wheaton.paxos.utility.RunnableOfT;
 
@@ -54,14 +54,11 @@ public class PostOfficeGUI extends JFrame
     private void initComponents()
     {
     	m_topPanel = new JPanel();
-    	m_participantNamePanel = new JPanel();
     	m_operationsPanel = new JPanel();
     	m_plusMinusPanel = new JPanel();
 
     	m_participantDetailsTextPane = new JTextPane();
-    	m_participantScrollPane = new JScrollPane();
     	m_detailsJScrollPane = new JScrollPane();
-    	m_detailsScrollPane = new ScrollPane();
 
     	m_logTextPane = new JTextPane();
     	m_logJScrollPane = new JScrollPane();
@@ -69,8 +66,6 @@ public class PostOfficeGUI extends JFrame
     	m_queueTextPane = new JTextPane();
     	m_queueJScrollPane = new JScrollPane();
 
-    	m_participantListLabel = new JLabel();
-    	m_participantNameLabel = new JLabel();
     	m_timeDisplay = new JLabel();
 
     	m_homeButton = new JButton();
@@ -85,6 +80,7 @@ public class PostOfficeGUI extends JFrame
         m_leaveButton = new JButton();
 
         m_participantList = new JList();
+        m_participantListScrollPane = new JScrollPane();
 
         setResizable(true);
         setTitle("Paxos Simulator");
@@ -92,15 +88,16 @@ public class PostOfficeGUI extends JFrame
         m_listModel = new DefaultListModel();
 		m_participantList.setModel(m_listModel);
 		m_participantList.getSelectionModel().addListSelectionListener(m_listSelectionListener);
-        m_participantScrollPane.setViewportView(m_participantList);
-
-        m_participantListLabel.setText("Participants");
+		m_participantListScrollPane.setBorder(BorderFactory.createTitledBorder("Participants"));
+        m_participantListScrollPane.setViewportView(m_participantList);
 
         m_queueTextPane.setEditable(false);
         m_queueJScrollPane.setViewportView(m_queueTextPane);
+        m_queueJScrollPane.setBorder(BorderFactory.createTitledBorder("Message Queue"));
 
         m_logTextPane.setEditable(false);
         m_logJScrollPane.setViewportView(m_logTextPane);
+        m_logJScrollPane.setBorder(BorderFactory.createTitledBorder("Log"));
 
         m_topPanel.setBorder(BorderFactory.createEtchedBorder());
 
@@ -120,10 +117,10 @@ public class PostOfficeGUI extends JFrame
             .addGroup(GroupLayout.Alignment.TRAILING, TopPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(m_homeButton, GroupLayout.PREFERRED_SIZE, 36, GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 200, Short.MAX_VALUE)
+                .addGap(20, 20, Short.MAX_VALUE)
                 .addComponent(m_playPauseButton, GroupLayout.PREFERRED_SIZE, 32, GroupLayout.PREFERRED_SIZE)
-                .addGap(155, 155, 155)
-                .addComponent(m_timeDisplay)
+                .addGap(20, 20, Short.MAX_VALUE)
+                .addComponent(m_timeDisplay, GroupLayout.PREFERRED_SIZE, 55, GroupLayout.DEFAULT_SIZE)
                 .addContainerGap())
         );
         TopPanelLayout.setVerticalGroup(
@@ -136,11 +133,9 @@ public class PostOfficeGUI extends JFrame
                 .addContainerGap())
         );
 
-        m_participantDetailsTextPane.setText("Participant Details");
         m_participantDetailsTextPane.setEditable(false);
         m_detailsJScrollPane.setViewportView(m_participantDetailsTextPane);
-
-        m_detailsScrollPane.add(m_detailsJScrollPane);
+        m_detailsJScrollPane.setBorder(BorderFactory.createTitledBorder("Participant Details"));
 
         m_operationsPanel.setBorder(BorderFactory.createEtchedBorder());
 
@@ -162,13 +157,13 @@ public class PostOfficeGUI extends JFrame
         m_leaveButton.setText("Leave");
         m_leaveButton.addActionListener(m_leaveButtonListener);
 
-        GroupLayout OperationsPanelLayout = new GroupLayout(m_operationsPanel);
-        m_operationsPanel.setLayout(OperationsPanelLayout);
-        OperationsPanelLayout.setHorizontalGroup(
-            OperationsPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(OperationsPanelLayout.createSequentialGroup()
+        GroupLayout operationsPanelLayout = new GroupLayout(m_operationsPanel);
+        m_operationsPanel.setLayout(operationsPanelLayout);
+        operationsPanelLayout.setHorizontalGroup(
+            operationsPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGroup(operationsPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(OperationsPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                .addGroup(operationsPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addComponent(m_leaveButton, GroupLayout.DEFAULT_SIZE, 76, Short.MAX_VALUE)
                     .addComponent(m_delayButton, GroupLayout.DEFAULT_SIZE, 76, Short.MAX_VALUE)
                     .addComponent(m_enterButton, GroupLayout.DEFAULT_SIZE, 76, Short.MAX_VALUE)
@@ -177,10 +172,10 @@ public class PostOfficeGUI extends JFrame
                     .addComponent(m_promoteButton, GroupLayout.DEFAULT_SIZE, 76, Short.MAX_VALUE))
                 .addContainerGap())
         );
-        OperationsPanelLayout.setVerticalGroup(
-            OperationsPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(GroupLayout.Alignment.TRAILING, OperationsPanelLayout.createSequentialGroup()
-                .addContainerGap(25, Short.MAX_VALUE)
+        operationsPanelLayout.setVerticalGroup(
+            operationsPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGroup(GroupLayout.Alignment.TRAILING, operationsPanelLayout.createSequentialGroup()
+                .addContainerGap()
                 .addComponent(m_promoteButton)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(m_messagesButton)
@@ -193,27 +188,6 @@ public class PostOfficeGUI extends JFrame
                 .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(m_leaveButton)
                 .addContainerGap())
-        );
-
-        m_participantNamePanel.setBorder(BorderFactory.createEtchedBorder());
-
-        m_participantNameLabel.setText("None Selected");
-
-        GroupLayout imageNamePanelLayout = new GroupLayout(m_participantNamePanel);
-        m_participantNamePanel.setLayout(imageNamePanelLayout);
-        imageNamePanelLayout.setHorizontalGroup(
-            imageNamePanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(imageNamePanelLayout.createSequentialGroup()
-                .addGroup(imageNamePanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                    .addGroup(imageNamePanelLayout.createSequentialGroup()
-                        .addGap(21, 21, 21)
-                        .addComponent(m_participantNameLabel)))
-                .addContainerGap())
-        );
-        imageNamePanelLayout.setVerticalGroup(
-            imageNamePanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(imageNamePanelLayout.createSequentialGroup()
-                .addComponent(m_participantNameLabel))
         );
 
         m_plusMinusPanel.setBorder(BorderFactory.createEtchedBorder());
@@ -231,15 +205,16 @@ public class PostOfficeGUI extends JFrame
             .addGroup(PlusMinusPanelLayout.createSequentialGroup()
                 .addComponent(m_plusButton, GroupLayout.PREFERRED_SIZE, 41, GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(m_minusButton, GroupLayout.PREFERRED_SIZE, 41, Short.MAX_VALUE)
+                .addComponent(m_minusButton, GroupLayout.PREFERRED_SIZE, 41, GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
         PlusMinusPanelLayout.setVerticalGroup(
             PlusMinusPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(PlusMinusPanelLayout.createSequentialGroup()
+            		.addContainerGap()
                 .addGroup(PlusMinusPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                     .addComponent(m_minusButton, GroupLayout.PREFERRED_SIZE, 29, GroupLayout.PREFERRED_SIZE)
-                    .addComponent(m_plusButton, GroupLayout.DEFAULT_SIZE, 29, Short.MAX_VALUE))
+                    .addComponent(m_plusButton, GroupLayout.PREFERRED_SIZE, 29, GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
 
@@ -247,30 +222,32 @@ public class PostOfficeGUI extends JFrame
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGroup(GroupLayout.Alignment.LEADING, layout.createParallelGroup()
+            		.addGroup(layout.createSequentialGroup()
+            				.addContainerGap()
+            				.addComponent(m_topPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+            				.addContainerGap()))
             .addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(12, 12, 12)
-                        .addComponent(m_participantListLabel))
+                	.addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(m_plusMinusPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap())
                     .addGroup(layout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(m_plusMinusPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(m_participantScrollPane, GroupLayout.PREFERRED_SIZE, 107, GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(m_participantListScrollPane, GroupLayout.PREFERRED_SIZE, 120, GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap()))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(m_queueJScrollPane, GroupLayout.PREFERRED_SIZE, 250, GroupLayout.PREFERRED_SIZE)
+                        .addComponent(m_queueJScrollPane, 200, 400, Short.MAX_VALUE)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(m_logJScrollPane, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE))
+                        .addComponent(m_logJScrollPane, 200, 400, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(m_participantNamePanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(m_detailsScrollPane, GroupLayout.DEFAULT_SIZE, 230, Short.MAX_VALUE)
+                        .addComponent(m_detailsJScrollPane, 200, 230, GroupLayout.DEFAULT_SIZE)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(m_operationsPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-                    .addComponent(m_topPanel, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        )
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -279,32 +256,31 @@ public class PostOfficeGUI extends JFrame
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(m_topPanel, GroupLayout.PREFERRED_SIZE, 40, GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(27, 27, 27)
-                        .addComponent(m_participantListLabel)))
+                        .addComponent(m_topPanel, GroupLayout.PREFERRED_SIZE, 40, GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap()))
                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                            .addComponent(m_detailsScrollPane, GroupLayout.DEFAULT_SIZE, 278, Short.MAX_VALUE)
-                            .addComponent(m_operationsPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(m_participantNamePanel, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                            .addComponent(m_detailsJScrollPane, GroupLayout.DEFAULT_SIZE, 250, GroupLayout.PREFERRED_SIZE)
+                            .addComponent(m_operationsPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE)
+                            )
                         .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                             .addComponent(m_logJScrollPane, GroupLayout.DEFAULT_SIZE, 98, Short.MAX_VALUE)
                             .addComponent(m_queueJScrollPane, GroupLayout.DEFAULT_SIZE, 98, Short.MAX_VALUE)))
                     .addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(m_participantScrollPane, GroupLayout.DEFAULT_SIZE, 341, Short.MAX_VALUE)
+                        .addComponent(m_participantListScrollPane, GroupLayout.DEFAULT_SIZE, 341, Short.MAX_VALUE)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(m_plusMinusPanel, GroupLayout.PREFERRED_SIZE, 41, GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
 
-        // Get the size of the screen
-        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         
         pack();
+
+        // Get the size of the screen
+        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
 
         // Determine the new location of the window
         int w = getSize().width;
@@ -421,7 +397,7 @@ public class PostOfficeGUI extends JFrame
 		@Override
 		public void run(String time)
 		{
-			m_timeDisplay.setText(time);
+			m_timeDisplay.setText("Time: " + time);
 		}
 	};
 
@@ -430,10 +406,16 @@ public class PostOfficeGUI extends JFrame
 		@Override
 		public void valueChanged(ListSelectionEvent event)
 		{
+			if (m_selectedParticipantId > 0)
+			{
+				PaxosLogManager.removeLogUpdateListener(m_selectedParticipantId, m_logUpdateListener);
+				PaxosMessageQueueManager.removeQueueUpdateListener(m_selectedParticipantId, m_queueUpdateListener);
+			}
+
 			ListSelectionModel model = (ListSelectionModel) event.getSource();
 			if (model.isSelectionEmpty() || model.getMaxSelectionIndex() - model.getMinSelectionIndex() != 0)
 			{
-				m_participantNameLabel.setText("None Selected");
+		        m_detailsJScrollPane.setBorder(BorderFactory.createTitledBorder("Participant Details"));
 				m_logTextPane.setText("");
 				m_queueTextPane.setText("");
 				m_participantDetailsTextPane.setText("");
@@ -441,28 +423,32 @@ public class PostOfficeGUI extends JFrame
 			else
 			{
 				String participantNameString = m_listModel.get(model.getMaxSelectionIndex()).toString();
-				int participantId = Integer.parseInt(participantNameString.substring(participantNameString.lastIndexOf(' ') + 1));
-				m_participantNameLabel.setText(participantNameString);
-				PaxosLogManager.addLogUpdateListener(participantId, new LogUpdateListener()
+				m_selectedParticipantId = Integer.parseInt(participantNameString.substring(participantNameString.lastIndexOf(' ') + 1));
+		        m_detailsJScrollPane.setBorder(BorderFactory.createTitledBorder(participantNameString + " Details"));
+				m_logUpdateListener = new LogUpdateListener()
 				{
 					@Override
 					public void onLogUpdate(String updatedLog)
 					{
 						m_logTextPane.setText(updatedLog);
 					}
-				});
-				PaxosMessageQueueManager.addQueueUpdateListener(participantId, new QueueUpdateListener()
+				};
+		        PaxosLogManager.addLogUpdateListener(m_selectedParticipantId, m_logUpdateListener);
+		        m_queueUpdateListener = new QueueUpdateListener()
 				{
 					@Override
 					public void onQueueUpdate(String queueContents)
 					{
 						m_queueTextPane.setText(queueContents);
 					}
-				});
+				};
+				PaxosMessageQueueManager.addQueueUpdateListener(m_selectedParticipantId, m_queueUpdateListener);
 			}
-
-			pack();
 		}
+
+	    private int m_selectedParticipantId;
+	    private LogUpdateListener m_logUpdateListener;
+	    private QueueUpdateListener m_queueUpdateListener;
 	};
 
     private static final long serialVersionUID = -7049383055209558563L;
@@ -474,25 +460,18 @@ public class PostOfficeGUI extends JFrame
     private final PostOffice m_postOffice;
 
     private JPanel m_topPanel;
-    private JPanel m_participantNamePanel;
     private JPanel m_operationsPanel;
     private JPanel m_plusMinusPanel;
 
     private JTextPane m_participantDetailsTextPane;
-    private JScrollPane m_participantScrollPane;
     private JScrollPane m_detailsJScrollPane;
-    private ScrollPane m_detailsScrollPane;
 
     private JTextPane m_logTextPane;
     private JScrollPane m_logJScrollPane;
-//    private ScrollPane m_logScrollPane;
 
     private JTextPane m_queueTextPane;
     private JScrollPane m_queueJScrollPane;
-//    private ScrollPane m_queueScrollPane;
 
-    private JLabel m_participantListLabel;
-    private JLabel m_participantNameLabel;
     private JLabel m_timeDisplay;
 
     private JButton m_homeButton;
@@ -507,5 +486,6 @@ public class PostOfficeGUI extends JFrame
     private JButton m_leaveButton;
 
     private JList m_participantList;
+    private JScrollPane m_participantListScrollPane;
     private DefaultListModel m_listModel;
 }

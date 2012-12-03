@@ -41,7 +41,7 @@ public class PaxosLog
 	{
 		if (m_firstLogId < 0 || forceRescan)
 		{
-			m_firstLogId = 0;
+			m_firstLogId = 1;
 			try
 			{
 				Scanner scanner = new Scanner(m_file);
@@ -71,7 +71,7 @@ public class PaxosLog
 		try
 		{
 			BufferedWriter writer = new BufferedWriter(new FileWriter(m_file, true));
-			if (decree.getDecreeId() != 0)
+			if (decree.getDecreeId() > 1)
 				writer.newLine();
 			writer.write(lineToAppend);
 			writer.close();
@@ -118,7 +118,7 @@ public class PaxosLog
 			scanner.close();
 
 			if (line.isEmpty())
-				return -1;
+				return 0;
 
 			return Integer.parseInt(line.substring(0, line.indexOf(Decree.DELIMITER)));
 		}
@@ -126,7 +126,7 @@ public class PaxosLog
 		{
 			e.printStackTrace();
 		}
-		return -1;
+		return 0;
 	}
 
 	public String getLogSinceId(int logId)
