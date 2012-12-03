@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Queue;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Queues;
 
 import edu.wheaton.paxos.logic.PaxosListeners.QueueUpdateListener;
 
@@ -61,7 +62,9 @@ public final class PaxosQueue<E>
 	private void queueUpdated()
 	{
 		StringBuilder builder = new StringBuilder();
-		Iterator<E> it = iterator();
+		// copy the queue so we don't get a ConcurrentModificationException
+		Queue<E> queue = Queues.newArrayDeque(m_queue);
+		Iterator<E> it = queue.iterator();
 		while (it.hasNext())
 		{
 			builder.append(it.next().toString());
