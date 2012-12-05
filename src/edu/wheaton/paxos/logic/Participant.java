@@ -85,8 +85,18 @@ public final class Participant implements Closeable
 			}
 			break;
 		case ENTER:
+			// TODO do we need to assert that we're not present?
+			m_shouldEnter = true;
+			break;
 		case LEAVE:
-			// TODO: call leave()
+			// TODO do we need to assert that we're present?
+			m_shouldLeave = true;
+			m_withAmnesia = false;
+			break;
+		case LEAVE_WITH_AMNESIA:
+			// TODO do we need to assert that we're present?
+			m_shouldLeave = true;
+			m_withAmnesia = true;
 		case SHOW:
 		case HIDE:
 		}
@@ -104,18 +114,28 @@ public final class Participant implements Closeable
 					// TODO: pick one of these
 					// Note: if you have "left", your only options should be enter() or delay()
 
-					double choice = Math.random();
 //					// join
 //					join();
 //					// resign
 //					resign();
-//					// enter
-//					enter();
-//					// leave (amnesia?)
-//					leave(true);
+					if (m_shouldEnter)
+					{
+						m_shouldEnter = false;
+						// enter
+						enter();
+						continue;
+					}
+					if (m_shouldLeave)
+					{
+						m_shouldLeave = false;
+						// leave (amnesia?)
+						leave(m_withAmnesia);
+						continue;
+					}
 //					// delay
 //					delay(10);
 //					// initiate proposal
+					double choice = Math.random();
 					if (choice < 0.1 && m_leaderId == m_id)
 						initiateProposal();
 //					// receive (interval)
@@ -350,6 +370,9 @@ public final class Participant implements Closeable
 	private final Object m_lock;
 	private volatile boolean m_stopped;
 	private volatile boolean m_paused;
+	private volatile boolean m_shouldEnter;
+	private volatile boolean m_shouldLeave;
+	private volatile boolean m_withAmnesia;
 
 	// Paxos state (persistent)
 	private final PaxosLog m_log;
