@@ -16,7 +16,14 @@ public class PaxosLog
 {
 	public PaxosLog(int partipantId)
 	{
-		m_file = new File(partipantId + ".log");
+		File logDirectory = new File("logs");
+		if (!(logDirectory.exists() || logDirectory.mkdir()))
+		{
+			System.err.println("Cannot create log directory");
+			System.exit(-1);
+		}
+
+		m_file = new File(logDirectory, partipantId + ".log");
 		m_firstLogId = -1;
 		m_listeners = Lists.newArrayList();
 		if (m_file.exists())
