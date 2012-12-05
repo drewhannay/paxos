@@ -20,7 +20,7 @@ public final class Participant implements Closeable
 		m_id = id;
 		m_leaderId = 1;
 		
-		m_clock = new Clock();
+//		m_clock = new Clock();
 		m_log = PaxosLogManager.createPaxosLog(m_id);
 
 		m_lock = new Object();
@@ -114,10 +114,6 @@ public final class Participant implements Closeable
 					// TODO: pick one of these
 					// Note: if you have "left", your only options should be enter() or delay()
 
-//					// join
-//					join();
-//					// resign
-//					resign();
 					if (m_shouldEnter)
 					{
 						m_shouldEnter = false;
@@ -132,15 +128,32 @@ public final class Participant implements Closeable
 						leave(m_withAmnesia);
 						continue;
 					}
-//					// delay
-//					delay(10);
-//					// initiate proposal
 					double choice = Math.random();
-					if (choice < 0.1 && m_leaderId == m_id)
+					if (choice < 0.1)
+					{
+						// join
+						join();
+					}
+					else if (choice < 0.2)
+					{
+						// resign
+						resign();
+					}
+					else if (choice < 0.3 && m_leaderId == m_id)
+					{
+						// initiate proposal
 						initiateProposal();
-//					// receive (interval)
+					}
+					else if (choice < 0.5)
+					{
+						// delay
+						delay(DELAY_INTERVAL);
+					}
 					else
-						receive(100);
+					{
+						// receive
+						receive(DELAY_INTERVAL);
+					}
 
 					updateDetails();
 				}
@@ -171,7 +184,7 @@ public final class Participant implements Closeable
 		private void resign()
 		{
 			// TODO
-			Decree decree = null;// = new Decree(DecreeType.REMOVE_PARTICIPANT);
+//			Decree decree = null;// = new Decree(DecreeType.REMOVE_PARTICIPANT);
 			if (m_id == m_leaderId)
 			{
 				// TODO messageId needs to go in the Decree
@@ -353,13 +366,14 @@ public final class Participant implements Closeable
 	}
 
 	private static final int LEADER_INTERVAL = 30;
+	private static final int DELAY_INTERVAL = 100;
 
 	private final RunnableOfT<PaxosMessage> m_sendMessageRunnable;
 	private final List<ParticipantDetailsListener> m_listeners;
 	private final List<Participant> m_potentialParticipants;
 	// housekeeping
 	private final int m_id;
-	private final Clock m_clock;
+//	private final Clock m_clock;
 	private boolean m_hasJoined;
 	private boolean m_isPresent;
 
