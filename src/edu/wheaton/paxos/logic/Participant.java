@@ -2,6 +2,7 @@ package edu.wheaton.paxos.logic;
 
 import java.io.Closeable;
 import java.util.List;
+import java.util.Scanner;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -239,8 +240,14 @@ public final class Participant implements Closeable
 					}
 					break;
 				case SEND_LOG:
-					// TODO process any decrees that are added
-					m_log.update(message.getLogData());
+					String logData = message.getLogData();
+					Scanner scanner = new Scanner(logData);
+					while (scanner.hasNextLine())
+					{
+						if (!processDecree(Decree.fromString(scanner.nextLine())))
+							break;
+					}
+
 					if (m_log.getLatestLogId() < message.getLogId())
 					{
 						responseMessage = PaxosMessage.createRequestLogMessage(m_id, message.getSenderId(), m_log.getLatestLogId()); 
@@ -267,8 +274,12 @@ public final class Participant implements Closeable
 		}
 	});
 
-	private void processDecree(Decree decree)
+	private boolean processDecree(Decree decree)
 	{
+		if (!m_log.recordDecree(decree))
+			return false;
+
+		// TODO do we need to update our promised number or highest seen number here?
 		switch (decree.getDecreeType())
 		{
 		case OPAQUE_DECREE:
@@ -284,7 +295,8 @@ public final class Participant implements Closeable
 			// TODO maintain interval
 			break;
 		}
-		m_log.recordDecree(decree);
+
+		return true;
 	}
 
 	private void updateDetails()

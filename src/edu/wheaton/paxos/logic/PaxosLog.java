@@ -62,11 +62,11 @@ public class PaxosLog
 		return getLatestLogId() + 1;
 	}
 
-	public void recordDecree(Decree decree)
+	public boolean recordDecree(Decree decree)
 	{
 		String lineToAppend = decree.toString();
 		if (decree.getDecreeId() != getFirstUnknownId())
-			return;
+			return false;
 
 		try
 		{
@@ -78,11 +78,14 @@ public class PaxosLog
 
 			for (LogUpdateListener listener : m_listeners)
 				listener.onLogUpdate(getEntireLog());
+
+			return true;
 		}
 		catch (IOException e)
 		{
 			e.printStackTrace();
 		}
+		return false;
 	}
 
 	public Decree readDecree(int id)
@@ -174,33 +177,6 @@ public class PaxosLog
 			return null;
 		}
 		return logBuilder.toString();
-	}
-
-	public void update(String log)
-	{
-		int firstUnknownId = getFirstUnknownId();
-		while (Integer.parseInt(log.substring(0, log.indexOf(Decree.DELIMITER))) != firstUnknownId
-			&& log.contains("\n"))
-		{
-			log = log.substring(log.indexOf('\n') + 1);
-		}
-		if (!log.isEmpty())
-		{
-			try
-			{
-				BufferedWriter writer = new BufferedWriter(new FileWriter(m_file, true));
-				writer.newLine();
-				writer.write(log);
-				writer.close();
-
-				for (LogUpdateListener listener : m_listeners)
-					listener.onLogUpdate(getEntireLog());
-			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
-			}
-		}
 	}
 
 	public void addLogUpdateListener(LogUpdateListener listener)
