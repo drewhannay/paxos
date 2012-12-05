@@ -143,6 +143,7 @@ public final class Participant implements Closeable
 		{
 			Preconditions.checkArgument(!m_hasJoined);
 
+			m_sendMessageRunnable.run(PaxosMessage.createDecreeRequestMessage(m_id, m_leaderId, Decree.createAddParticipantDecree(Decree.NO_ID, m_id)));
 //			m_sendMessageRunnable.run(new PaxosMessage(m_id, m_leaderId, Decree.createAddParticipantDecree(Decree.NO_ID, m_id)));
 		}
 
@@ -223,24 +224,8 @@ public final class Participant implements Closeable
 				PaxosMessage responseMessage;
 				switch (message.getMessageType())
 				{
-//				case OPAQUE_DECREE:
-//					// TODO if you're the leader and you're receiving a request to send a decree, what do we do here?
-//					m_log.recordDecree(decree);
-//					break;
-//				case ADD_PARTICIPANT:
-//					break;
-//				case REMOVE_PARTICIPANT:
-////					int removeId = Integer.parseInt(decree.getDecreeValue());
-////					m_participants.remove(removeId);
-//					break;
-//				case SET_LEADER:
-//					m_leaderId = Integer.parseInt(decree.getDecreeValue());
-//					m_leaderExpiry = decree.getLeaderExpiry();
-//					m_log.recordDecree(decree);
-//					// TODO maintain interval
-//					break;
 				case DECREE_COMMIT:
-					// TODO
+					processDecree(message.getDecree());
 					break;
 				case DECREE_REQUEST:
 					// TODO
@@ -281,6 +266,26 @@ public final class Participant implements Closeable
 			}
 		}
 	});
+
+	private void processDecree(Decree decree)
+	{
+		switch (decree.getDecreeType())
+		{
+		case OPAQUE_DECREE:
+			break;
+		case ADD_PARTICIPANT:
+			m_participants.remove(Integer.parseInt(decree.getDecreeValue()));
+			break;
+		case REMOVE_PARTICIPANT:
+			break;
+		case SET_LEADER:
+			m_leaderId = Integer.parseInt(decree.getDecreeValue());
+			m_leaderExpiry = decree.getLeaderExpiry();
+			// TODO maintain interval
+			break;
+		}
+		m_log.recordDecree(decree);
+	}
 
 	private void updateDetails()
 	{
