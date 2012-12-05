@@ -1,6 +1,5 @@
 package edu.wheaton.paxos.logic;
 
-import edu.wheaton.paxos.utility.Bag;
 
 public class PaxosMessage
 {
@@ -11,9 +10,22 @@ public class PaxosMessage
 		m_recipientId = recipientId;
 		m_logId = logId;
 		m_logData = logData;
-		m_quorum = new Bag<Integer>();
 		m_decree = decree;
-		m_ballot = new Bag<Integer>();
+	}
+
+	public static PaxosMessage createPrepareMessage(int senderId, int recipientId, Decree decree)
+	{
+		return new PaxosMessage(PaxosMessageType.PREPARE, senderId, recipientId, NO_LOG_ID, null, decree);
+	}
+
+	public static PaxosMessage createAcceptMessage(int senderId, int recipientId, Decree decree)
+	{
+		return new PaxosMessage(PaxosMessageType.ACCEPT, senderId, recipientId, NO_LOG_ID, null, decree);
+	}
+
+	public static PaxosMessage createRejectMessage(int senderId, int recipientId, Decree decree)
+	{
+		return new PaxosMessage(PaxosMessageType.REJECT, senderId, recipientId, NO_LOG_ID, null, decree);
 	}
 
 	public static PaxosMessage createDecreeCommitMessage(int senderId, int recipientId, Decree decree)
@@ -61,19 +73,9 @@ public class PaxosMessage
 		return m_logData;
 	}
 
-	public Bag<Integer> getQuorum()
-	{
-		return m_quorum;
-	}
-
 	public Decree getDecree()
 	{
 		return m_decree;
-	}
-
-	public Bag<Integer> getBallot()
-	{
-		return m_ballot;
 	}
 
 	@Override
@@ -84,11 +86,7 @@ public class PaxosMessage
 		builder.append(Decree.DELIMITER);
 		builder.append(Integer.toString(m_recipientId));
 		builder.append(Decree.DELIMITER);
-		builder.append(m_quorum.toString());
-		builder.append(Decree.DELIMITER);
 		builder.append(m_decree.toString());
-		builder.append(Decree.DELIMITER);
-		builder.append(m_ballot.toString());
 
 		return builder.toString();
 	}
@@ -100,7 +98,5 @@ public class PaxosMessage
 	private final int m_recipientId;
 	private final int m_logId;
 	private final String m_logData;
-	private final Bag<Integer> m_quorum;
 	private final Decree m_decree;
-	private final Bag<Integer> m_ballot;
 }

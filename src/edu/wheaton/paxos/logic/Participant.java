@@ -8,6 +8,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
 import edu.wheaton.paxos.logic.PaxosListeners.ParticipantDetailsListener;
+import edu.wheaton.paxos.utility.Bag;
 import edu.wheaton.paxos.utility.RunnableOfT;
 
 public final class Participant implements Closeable
@@ -178,7 +179,6 @@ public final class Participant implements Closeable
 			Preconditions.checkArgument(!m_hasJoined);
 
 			m_sendMessageRunnable.run(PaxosMessage.createDecreeRequestMessage(m_id, m_leaderId, Decree.createAddParticipantDecree(Decree.NO_ID, m_id)));
-//			m_sendMessageRunnable.run(new PaxosMessage(m_id, m_leaderId, Decree.createAddParticipantDecree(Decree.NO_ID, m_id)));
 		}
 
 		private void resign()
@@ -256,13 +256,37 @@ public final class Participant implements Closeable
 			{
 				PaxosMessage message = m_inbox.poll();
 				PaxosMessage responseMessage;
+				Decree decree;
 				switch (message.getMessageType())
 				{
+				case PREPARE:
+					decree = message.getDecree();
+					// 1) ACCEPT/REJECT check if this is already in the log, if so reply as before
+					// TODO
+					// 2) ACCEPT "completely okay", from the leader, etc...
+					// and leader is not expired
+					if (message.getSenderId() == m_leaderId && decree.getDecreeId() > Math.max(m_highestSeenNumber, m_promisedNumber))
+					{
+						responseMessage = PaxosMessage.createAcceptMessage(m_id, m_leaderId, decree);
+					}
+					// 3) REJECT Definitely not acceptable
+					else
+					{
+						responseMessage = PaxosMessage.createRejectMessage(m_id, m_leaderId, decree);
+					}
+					// 4) Decree number is too high for your log. Go learn.
+					// TODO
+					
+					break;
 				case DECREE_COMMIT:
 					processDecree(message.getDecree());
 					break;
 				case DECREE_REQUEST:
-					// TODO
+					processDecreeRequest(message.getDecree());
+					break;
+				case ACCEPT:
+					break;
+				case REJECT:
 					break;
 				case REQUEST_LOG:
 					if (m_log.getLatestLogId() > message.getLogId())
@@ -312,20 +336,62 @@ public final class Participant implements Closeable
 		if (!m_log.recordDecree(decree))
 			return false;
 
+		int participantId;
 		// TODO do we need to update our promised number or highest seen number here?
 		switch (decree.getDecreeType())
 		{
 		case OPAQUE_DECREE:
+			// decree has already been recorded; nothing to do
 			break;
 		case ADD_PARTICIPANT:
-			m_participants.remove(Integer.parseInt(decree.getDecreeValue()));
+			participantId = Integer.parseInt(decree.getDecreeValue());
+			if (participantId != m_id)
+				m_participants.add(participantId);
+			else
+				m_hasJoined = true;
 			break;
 		case REMOVE_PARTICIPANT:
+			participantId = Integer.parseInt(decree.getDecreeValue());
+			if (participantId != m_id)
+				m_participants.remove(participantId);
+			else
+				m_hasJoined = false;
 			break;
 		case SET_LEADER:
 			m_leaderId = Integer.parseInt(decree.getDecreeValue());
 			m_leaderExpiry = decree.getLeaderExpiry();
 			// TODO maintain interval
+			break;
+		}
+
+		return true;
+	}
+
+	private boolean processDecreeRequest(Decree decree)
+	{
+		// TODO what if we get a decree request before the last ballot is completed?
+		if (m_id != m_leaderId)
+			return false;
+
+		PaxosMessage message;
+		// TODO do we need to update our promised number or highest seen number here?
+		switch (decree.getDecreeType())
+		{
+		case OPAQUE_DECREE:
+			// decree has already been recorded; nothing to do
+			break;
+		case ADD_PARTICIPANT:
+			m_ballot = new Bag<Integer>();
+			// TODO record prepare
+			for (Integer participantId : m_participants)
+			{
+				Decree proposedDecree = Decree.createAddParticipantDecree(++m_highestSeenNumber, Integer.parseInt(decree.getDecreeValue()));
+				m_sendMessageRunnable.run(PaxosMessage.createPrepareMessage(m_id, participantId, proposedDecree));
+			}
+			break;
+		case REMOVE_PARTICIPANT:
+			break;
+		case SET_LEADER:
 			break;
 		}
 
@@ -380,6 +446,8 @@ public final class Participant implements Closeable
 	// volatile state
 	private final PaxosQueue<PaxosMessage> m_inbox;
 	private final List<Integer> m_participants;
+
+	private Bag<Integer> m_ballot;
 
 	private final Object m_lock;
 	private volatile boolean m_stopped;
