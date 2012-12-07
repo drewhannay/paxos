@@ -40,7 +40,7 @@ public final class Participant implements Closeable
 		}
 
 		m_inbox = PaxosMessageQueueManager.createPaxosMessageQueue(m_id);
-		m_participants = Lists.newCopyOnWriteArrayList();
+		m_participantIds = Lists.newCopyOnWriteArrayList();
 		m_mainThread.start();
 	}
 
@@ -202,7 +202,7 @@ public final class Participant implements Closeable
 
 		private void enter()
 		{
-			for (Integer recipientId : m_participants)
+			for (Integer recipientId : m_participantIds)
 				m_sendMessageRunnable.run(PaxosMessage.createRequestLogMessage(m_id, recipientId, m_log.getLatestLogId()));
 		}
 
@@ -213,7 +213,7 @@ public final class Participant implements Closeable
 			if (withAmnesia)
 			{
 				m_inbox.clear();
-				m_participants.clear();
+				m_participantIds.clear();
 			}
 		}
 
@@ -255,27 +255,35 @@ public final class Participant implements Closeable
 			if (!m_inbox.isEmpty())
 			{
 				PaxosMessage message = m_inbox.poll();
-				PaxosMessage responseMessage;
+				PaxosMessage responseMessage = null;
 				Decree decree;
 				switch (message.getMessageType())
 				{
 				case PREPARE:
 					decree = message.getDecree();
 					// 1) ACCEPT/REJECT check if this is already in the log, if so reply as before
-					// TODO
-					// 2) ACCEPT "completely okay", from the leader, etc...
+					if (decree.getDecreeId() < m_log.getFirstUnknownId())
+					{
+						// TODO
+					}
+					// 2) Decree number is too high for your log. Go learn.
+					else if (decree.getDecreeId() > m_log.getFirstUnknownId())
+					{
+						responseMessage = PaxosMessage.createRequestLogMessage(m_id, message.getSenderId(), m_log.getLatestLogId());
+					}
+					// 3) ACCEPT "completely okay", from the leader, etc...
 					// and leader is not expired
-					if (message.getSenderId() == m_leaderId && decree.getDecreeId() > Math.max(m_highestSeenNumber, m_promisedNumber))
+					else if (message.getSenderId() == m_leaderId && decree.getDecreeId() > Math.max(m_highestSeenNumber, m_promisedNumber))
 					{
 						responseMessage = PaxosMessage.createAcceptMessage(m_id, m_leaderId, decree);
 					}
-					// 3) REJECT Definitely not acceptable
+					// 4) REJECT Definitely not acceptable
 					else
 					{
 						responseMessage = PaxosMessage.createRejectMessage(m_id, m_leaderId, decree);
 					}
-					// 4) Decree number is too high for your log. Go learn.
-					// TODO
+
+					m_sendMessageRunnable.run(responseMessage);
 					
 					break;
 				case DECREE_COMMIT:
@@ -285,8 +293,32 @@ public final class Participant implements Closeable
 					processDecreeRequest(message.getDecree());
 					break;
 				case ACCEPT:
+					if (m_id != m_leaderId)
+						return;
+
+					decree = message.getDecree();
+					if (m_currentDecreeId == decree.getDecreeId() && m_participantIds.contains(message.getSenderId()))
+					{
+						m_ballot.add(message.getSenderId());
+						if (m_ballot.size() > (m_participantIds.size() / 2))
+						{
+							for (Integer participantId : m_participantIds)
+							{
+								m_sendMessageRunnable.run(PaxosMessage.createDecreeCommitMessage(m_id, participantId, decree));
+							}
+						}
+					}
 					break;
 				case REJECT:
+					if (m_id != m_leaderId)
+						return;
+
+					decree = message.getDecree();
+					if (m_currentDecreeId == decree.getDecreeId() && m_participantIds.contains(message.getSenderId()))
+					{
+						// this cannot happen while we have a fixed leader
+						Preconditions.checkArgument(false);
+					}
 					break;
 				case REQUEST_LOG:
 					if (m_log.getLatestLogId() > message.getLogId())
@@ -346,14 +378,14 @@ public final class Participant implements Closeable
 		case ADD_PARTICIPANT:
 			participantId = Integer.parseInt(decree.getDecreeValue());
 			if (participantId != m_id)
-				m_participants.add(participantId);
+				m_participantIds.add(participantId);
 			else
 				m_hasJoined = true;
 			break;
 		case REMOVE_PARTICIPANT:
 			participantId = Integer.parseInt(decree.getDecreeValue());
 			if (participantId != m_id)
-				m_participants.remove(participantId);
+				m_participantIds.remove(participantId);
 			else
 				m_hasJoined = false;
 			break;
@@ -383,9 +415,11 @@ public final class Participant implements Closeable
 		case ADD_PARTICIPANT:
 			m_ballot = new Bag<Integer>();
 			// TODO record prepare
-			for (Integer participantId : m_participants)
+			m_highestSeenNumber++;
+			m_currentDecreeId = m_highestSeenNumber;
+			for (Integer participantId : m_participantIds)
 			{
-				Decree proposedDecree = Decree.createAddParticipantDecree(++m_highestSeenNumber, Integer.parseInt(decree.getDecreeValue()));
+				Decree proposedDecree = Decree.createAddParticipantDecree(m_highestSeenNumber, Integer.parseInt(decree.getDecreeValue()));
 				m_sendMessageRunnable.run(PaxosMessage.createPrepareMessage(m_id, participantId, proposedDecree));
 			}
 			break;
@@ -410,7 +444,7 @@ public final class Participant implements Closeable
 			.append(m_leaderExpiry)
 			.append('\n')
 			.append("Participant List: ")
-			.append(m_participants.toString())
+			.append(m_participantIds.toString())
 			.append('\n')
 			.append("Promised Number: ")
 			.append(m_promisedNumber)
@@ -445,9 +479,10 @@ public final class Participant implements Closeable
 
 	// volatile state
 	private final PaxosQueue<PaxosMessage> m_inbox;
-	private final List<Integer> m_participants;
+	private final List<Integer> m_participantIds;
 
 	private Bag<Integer> m_ballot;
+	private int m_currentDecreeId;
 
 	private final Object m_lock;
 	private volatile boolean m_stopped;

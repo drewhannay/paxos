@@ -69,7 +69,7 @@ public class PaxosLog
 		return getLatestLogId() + 1;
 	}
 
-	public boolean recordDecree(Decree decree)
+	public boolean recordDecree(LogState state, Decree decree)
 	{
 		String lineToAppend = decree.toString();
 		if (decree.getDecreeId() != getFirstUnknownId())
@@ -195,6 +195,14 @@ public class PaxosLog
 	public void removeLogUpdateListener(LogUpdateListener listener)
 	{
 		m_listeners.remove(listener);
+	}
+
+	public enum LogState
+	{
+		PREPARE,
+		ACCEPT,
+		REJECT,
+		COMMIT;
 	}
 
 	private final File m_file;
