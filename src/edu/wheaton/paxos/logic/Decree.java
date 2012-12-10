@@ -17,7 +17,12 @@ public class Decree
 
 	public static Decree createAddParticipantDecree(int decreeId, int participantId)
 	{
-		return null;
+		return new Decree(decreeId, DecreeType.ADD_PARTICIPANT, Integer.toString(participantId), NO_INTERVAL);
+	}
+
+	public static Decree createRemoveParticipantDecree(int decreeId, int participantId)
+	{
+		return new Decree(decreeId, DecreeType.REMOVE_PARTICIPANT, Integer.toString(participantId), NO_INTERVAL);
 	}
 
 	public static Decree createSetLeaderDecree(int decreeId, int leaderId, int interval)

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Scanner;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
 import edu.wheaton.paxos.logic.PaxosListeners.LogUpdateListener;
@@ -49,16 +50,27 @@ public class PaxosLog
 		if (m_firstLogId < 0 || forceRescan)
 		{
 			m_firstLogId = 1;
+			Scanner scanner = null;
 			try
 			{
-				Scanner scanner = new Scanner(m_file);
-				String line = scanner.nextLine();
-				m_firstLogId = Integer.parseInt(line.substring(0, line.indexOf(Decree.DELIMITER)));
-				scanner.close();
+				scanner = new Scanner(m_file);
+				String line = null;
+				while (scanner.hasNextLine() && !(line = scanner.nextLine()).startsWith(LogState.COMMIT.toString()))
+					continue;
+
+				if (!Strings.isNullOrEmpty(line) && line.startsWith(LogState.COMMIT.toString()))
+				{
+					m_firstLogId = getIdFromLogEntry(line);
+				}
 			}
 			catch (FileNotFoundException e)
 			{
 				e.printStackTrace();
+			}
+			finally
+			{
+				if (scanner != null)
+					scanner.close();
 			}
 		}
 		return m_firstLogId;
@@ -71,7 +83,7 @@ public class PaxosLog
 
 	public boolean recordDecree(LogState state, Decree decree)
 	{
-		String lineToAppend = decree.toString();
+		String lineToAppend = state.toString() + Decree.DELIMITER + decree.toString();
 		if (decree.getDecreeId() != getFirstUnknownId())
 			return false;
 
@@ -103,8 +115,13 @@ public class PaxosLog
 			while (scanner.hasNextLine())
 			{
 				String line = scanner.nextLine();
-				if (Integer.parseInt(line.substring(0, line.indexOf(Decree.DELIMITER))) == id)
+				if (getIdFromLogEntry(line) == id)
+				{
+					if (!line.startsWith(LogState.COMMIT.toString()))
+						continue;
+					line = line.substring(line.indexOf(Decree.DELIMITER) + Decree.DELIMITER.length());
 					return Decree.fromString(line);
+				}
 			}
 			scanner.close();
 		}
@@ -118,25 +135,25 @@ public class PaxosLog
 	
 	public int getLatestLogId()
 	{
+		int logId = 0;
 		try
 		{
 			Scanner scanner = new Scanner(m_file);
 			String line = "";
 
 			while (scanner.hasNextLine())
+			{
 				line = scanner.nextLine();
+				if (line.startsWith(LogState.COMMIT.toString()))
+					logId = getIdFromLogEntry(line);
+			}
 			scanner.close();
-
-			if (line.isEmpty())
-				return 0;
-
-			return Integer.parseInt(line.substring(0, line.indexOf(Decree.DELIMITER)));
 		}
 		catch (FileNotFoundException e)
 		{
 			e.printStackTrace();
 		}
-		return 0;
+		return logId;
 	}
 
 	public String getLogSinceId(int logId)
@@ -149,7 +166,9 @@ public class PaxosLog
 			while (scanner.hasNextLine())
 			{
 				String line = scanner.nextLine();
-				if (!isPastGivenId && Integer.parseInt(line.substring(0, line.indexOf(Decree.DELIMITER))) == logId)
+				if (!line.startsWith(LogState.COMMIT.toString()))
+					continue;
+				if (!isPastGivenId && getIdFromLogEntry(line) == logId)
 					isPastGivenId = true;
 				if (isPastGivenId)
 					logBuilder.append(line);
@@ -164,6 +183,35 @@ public class PaxosLog
 		return logBuilder.toString();
 	}
 
+	public LogState findResponseForDecreeId(int decreeId)
+	{
+		try
+		{
+			Scanner scanner = new Scanner(m_file);
+			while (scanner.hasNextLine())
+			{
+				String line = scanner.nextLine();
+				if (getIdFromLogEntry(line) == decreeId)
+				{
+					if (line.startsWith(LogState.REJECT.toString()))
+						return LogState.REJECT;
+					else
+						return LogState.ACCEPT;
+				}
+			}
+			scanner.close();
+		}
+		catch (FileNotFoundException e)
+		{
+			e.printStackTrace();
+		}
+		return LogState.REJECT;
+	}
+
+	/**
+	 * Only used for displaying Log in the GUI
+	 * @return a String representing the entire contents of this PaxosLog
+	 */
 	public String getEntireLog()
 	{
 		StringBuilder logBuilder = new StringBuilder();
@@ -195,6 +243,12 @@ public class PaxosLog
 	public void removeLogUpdateListener(LogUpdateListener listener)
 	{
 		m_listeners.remove(listener);
+	}
+
+	private int getIdFromLogEntry(String logEntry)
+	{
+		int firstDelimiter = logEntry.indexOf(Decree.DELIMITER) + Decree.DELIMITER.length();
+		return Integer.parseInt(logEntry.substring(firstDelimiter, logEntry.indexOf(Decree.DELIMITER, firstDelimiter)));
 	}
 
 	public enum LogState

@@ -8,6 +8,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
 import edu.wheaton.paxos.logic.PaxosListeners.ParticipantDetailsListener;
+import edu.wheaton.paxos.logic.PaxosLog.LogState;
 import edu.wheaton.paxos.utility.Bag;
 import edu.wheaton.paxos.utility.RunnableOfT;
 
@@ -34,7 +35,7 @@ public final class Participant implements Closeable
 			Decree decree = Decree.createSetLeaderDecree(m_highestSeenNumber, m_id, LEADER_INTERVAL);
 			m_leaderId = Integer.parseInt(decree.getDecreeValue());
 			m_leaderExpiry = decree.getLeaderExpiry();
-			m_log.recordDecree(decree);
+			m_log.recordDecree(LogState.COMMIT, decree);
 			m_hasJoined = true;
 			m_isPresent = true;
 		}
@@ -86,16 +87,19 @@ public final class Participant implements Closeable
 			}
 			break;
 		case ENTER:
-			// TODO do we need to assert that we're not present?
+			Preconditions.checkArgument(!m_isPresent);
+
 			m_shouldEnter = true;
 			break;
 		case LEAVE:
-			// TODO do we need to assert that we're present?
+			Preconditions.checkArgument(m_isPresent);
+
 			m_shouldLeave = true;
 			m_withAmnesia = false;
 			break;
 		case LEAVE_WITH_AMNESIA:
-			// TODO do we need to assert that we're present?
+			Preconditions.checkArgument(m_isPresent);
+
 			m_shouldLeave = true;
 			m_withAmnesia = true;
 		case SHOW:
@@ -112,47 +116,40 @@ public final class Participant implements Closeable
 			{
 				while (!m_paused)
 				{
-					// TODO: pick one of these
 					// Note: if you have "left", your only options should be enter() or delay()
 
 					if (m_shouldEnter)
 					{
 						m_shouldEnter = false;
-						// enter
 						enter();
 						continue;
 					}
 					if (m_shouldLeave)
 					{
 						m_shouldLeave = false;
-						// leave (amnesia?)
 						leave(m_withAmnesia);
 						continue;
 					}
 					double choice = Math.random();
-					if (choice < 0.1)
+					if (!m_hasJoined && choice < 0.1)
 					{
-						// join
 						join();
 					}
-					else if (choice < 0.2)
+					else if (m_hasJoined && m_isPresent && choice < 0.1)
 					{
-						// resign
+						//TODO check this
 						resign();
 					}
-					else if (choice < 0.3 && m_leaderId == m_id)
+					else if (choice < 0.3 && m_isPresent)
 					{
-						// initiate proposal
 						initiateProposal();
 					}
 					else if (choice < 0.5)
 					{
-						// delay
 						delay(DELAY_INTERVAL);
 					}
-					else
+					else if (m_isPresent)
 					{
-						// receive
 						receive(DELAY_INTERVAL);
 					}
 
@@ -183,21 +180,14 @@ public final class Participant implements Closeable
 
 		private void resign()
 		{
-			// TODO
-//			Decree decree = null;// = new Decree(DecreeType.REMOVE_PARTICIPANT);
-			if (m_id == m_leaderId)
-			{
-				// TODO messageId needs to go in the Decree
-				int messageId = Math.max(m_highestSeenNumber, m_promisedNumber) + 1;
-				m_highestSeenNumber = messageId;
+			Preconditions.checkArgument(m_hasJoined);
 
-//				for (Integer recipientId : m_participants)
-//					m_sendMessageRunnable.run(new PaxosMessage(m_id, recipientId.intValue(), decree));
-			}
-			else
-			{
-//				m_sendMessageRunnable.run(new PaxosMessage(m_id, m_leaderId, decree));
-			}
+			if (m_id == m_leaderId)
+				return;
+
+			Decree decree = Decree.createRemoveParticipantDecree(Decree.NO_ID, m_id);
+			PaxosMessage message = PaxosMessage.createDecreeRequestMessage(m_id, m_leaderId, decree);
+			m_sendMessageRunnable.run(message);
 		}
 
 		private void enter()
@@ -234,19 +224,19 @@ public final class Participant implements Closeable
 		{
 			if (m_id == m_leaderId)
 			{
-				int messageId = Math.max(m_highestSeenNumber, m_promisedNumber) + 1;
+				int messageId = m_highestSeenNumber + 1;
 				m_highestSeenNumber = messageId;
 
 				Decree decree = Decree.createOpaqueDecree(messageId, "Leader-Initiated Decree");
-				m_log.recordDecree(decree);
-//				for (Integer recipientId : m_participants)
-//					m_sendMessageRunnable.run(new PaxosMessage(m_id, recipientId.intValue(), decree));
+				m_log.recordDecree(LogState.PREPARE, decree);
+				for (Integer recipientId : m_participantIds)
+					m_sendMessageRunnable.run(PaxosMessage.createPrepareMessage(m_id, recipientId, decree));
 			}
 			else
 			{
-//				PaxosMessage message = new PaxosMessage(m_id, m_leaderId,
-//						Decree.createOpaqueDecree(Decree.NO_ID, "Woo!"));
-//				m_sendMessageRunnable.run(message);
+				Decree decree = Decree.createOpaqueDecree(Decree.NO_ID, "Opaque Decree from " + Integer.toString(m_id));
+				PaxosMessage message = PaxosMessage.createDecreeRequestMessage(m_id, m_leaderId, decree);
+				m_sendMessageRunnable.run(message);
 			}
 		}
 
@@ -264,7 +254,11 @@ public final class Participant implements Closeable
 					// 1) ACCEPT/REJECT check if this is already in the log, if so reply as before
 					if (decree.getDecreeId() < m_log.getFirstUnknownId())
 					{
-						// TODO
+						LogState logState = m_log.findResponseForDecreeId(decree.getDecreeId());
+						if (logState == LogState.ACCEPT)
+							responseMessage = PaxosMessage.createAcceptMessage(m_id, m_leaderId, decree);
+						else
+							responseMessage = PaxosMessage.createRejectMessage(m_id, m_leaderId, decree);
 					}
 					// 2) Decree number is too high for your log. Go learn.
 					else if (decree.getDecreeId() > m_log.getFirstUnknownId())
@@ -273,13 +267,15 @@ public final class Participant implements Closeable
 					}
 					// 3) ACCEPT "completely okay", from the leader, etc...
 					// and leader is not expired
-					else if (message.getSenderId() == m_leaderId && decree.getDecreeId() > Math.max(m_highestSeenNumber, m_promisedNumber))
+					else if (message.getSenderId() == m_leaderId && decree.getDecreeId() > m_highestSeenNumber)
 					{
+						m_log.recordDecree(LogState.ACCEPT, decree);
 						responseMessage = PaxosMessage.createAcceptMessage(m_id, m_leaderId, decree);
 					}
 					// 4) REJECT Definitely not acceptable
 					else
 					{
+						m_log.recordDecree(LogState.REJECT, decree);
 						responseMessage = PaxosMessage.createRejectMessage(m_id, m_leaderId, decree);
 					}
 
@@ -365,11 +361,11 @@ public final class Participant implements Closeable
 
 	private boolean processDecree(Decree decree)
 	{
-		if (!m_log.recordDecree(decree))
+		if (!m_log.recordDecree(LogState.COMMIT, decree))
 			return false;
 
 		int participantId;
-		// TODO do we need to update our promised number or highest seen number here?
+		m_highestSeenNumber = Math.max(m_highestSeenNumber, decree.getDecreeId());
 		switch (decree.getDecreeType())
 		{
 		case OPAQUE_DECREE:
@@ -405,29 +401,31 @@ public final class Participant implements Closeable
 		if (m_id != m_leaderId)
 			return false;
 
-		PaxosMessage message;
-		// TODO do we need to update our promised number or highest seen number here?
+		m_ballot = new Bag<Integer>();
+		m_highestSeenNumber++;
+		m_currentDecreeId = m_highestSeenNumber;
+
+		Decree proposedDecree = null;
 		switch (decree.getDecreeType())
 		{
 		case OPAQUE_DECREE:
-			// decree has already been recorded; nothing to do
+			proposedDecree = Decree.createOpaqueDecree(m_highestSeenNumber, decree.getDecreeValue());
 			break;
 		case ADD_PARTICIPANT:
-			m_ballot = new Bag<Integer>();
-			// TODO record prepare
-			m_highestSeenNumber++;
-			m_currentDecreeId = m_highestSeenNumber;
-			for (Integer participantId : m_participantIds)
-			{
-				Decree proposedDecree = Decree.createAddParticipantDecree(m_highestSeenNumber, Integer.parseInt(decree.getDecreeValue()));
-				m_sendMessageRunnable.run(PaxosMessage.createPrepareMessage(m_id, participantId, proposedDecree));
-			}
+			proposedDecree = Decree.createAddParticipantDecree(m_highestSeenNumber, Integer.parseInt(decree.getDecreeValue()));
 			break;
 		case REMOVE_PARTICIPANT:
+			proposedDecree = Decree.createRemoveParticipantDecree(m_highestSeenNumber, Integer.parseInt(decree.getDecreeValue()));
 			break;
 		case SET_LEADER:
+			proposedDecree = Decree.createSetLeaderDecree(m_highestSeenNumber, Integer.parseInt(decree.getDecreeValue()), decree.getLeaderExpiry());
 			break;
 		}
+
+		m_log.recordDecree(LogState.PREPARE, proposedDecree);
+		
+		for (Integer participantId : m_participantIds)
+			m_sendMessageRunnable.run(PaxosMessage.createPrepareMessage(m_id, participantId, proposedDecree));
 
 		return true;
 	}
@@ -446,8 +444,8 @@ public final class Participant implements Closeable
 			.append("Participant List: ")
 			.append(m_participantIds.toString())
 			.append('\n')
-			.append("Promised Number: ")
-			.append(m_promisedNumber)
+//			.append("Promised Number: ")
+//			.append(m_promisedNumber)
 			.append('\n')
 			.append("Highest Seen Number: ")
 			.append(m_highestSeenNumber)
@@ -493,7 +491,7 @@ public final class Participant implements Closeable
 
 	// Paxos state (persistent)
 	private final PaxosLog m_log;
-	private int m_promisedNumber;
+//	private int m_promisedNumber;
 	private int m_highestSeenNumber;
 
 	// Paxos-maintained state
