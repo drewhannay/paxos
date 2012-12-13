@@ -59,12 +59,13 @@ public class Decree
 
 	public static Decree fromString(String decreeString)
 	{
-		String[] fields = decreeString.split(DELIMITER);
+		String[] fields = decreeString.split(DELIMITER_REGEX);
 		
-		Preconditions.checkState(fields.length == 5);
+		Preconditions.checkState(fields.length == 4);
 		
+		int interval = fields[3].equals("NO_INTERVAL") ? NO_INTERVAL : Integer.parseInt(fields[3]);
 		return new Decree(Integer.parseInt(fields[0]), DecreeType.valueOf(fields[1]), fields[2],
-				Integer.parseInt(fields[3]));
+				interval);
 	}
 
 	@Override
@@ -76,13 +77,16 @@ public class Decree
 		builder.append(DELIMITER);
 		builder.append(m_value);
 		builder.append(DELIMITER);
-		builder.append(DELIMITER);
-		builder.append(m_interval);
+		if (m_interval == NO_INTERVAL)
+			builder.append("NO_INTERVAL");
+		else
+			builder.append(m_interval);
 		
 		return builder.toString();
 	}
 
 	private static final int NO_INTERVAL = -1;
+	private static final String DELIMITER_REGEX = " \\| ";
 
 	private final int m_id;
 	private final DecreeType m_decreeType;

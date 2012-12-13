@@ -38,14 +38,14 @@ public class PaxosMessage
 		return new PaxosMessage(PaxosMessageType.DECREE_REQUEST, senderId, recipientId, NO_LOG_ID, null, decree);
 	}
 
-	public static PaxosMessage createRequestLogMessage(int senderId, int recipientId, int logId)
+	public static PaxosMessage createRequestLogMessage(int senderId, int recipientId, int firstUnknownLogId)
 	{
-		return new PaxosMessage(PaxosMessageType.REQUEST_LOG, senderId, recipientId, logId, null, null);
+		return new PaxosMessage(PaxosMessageType.REQUEST_LOG, senderId, recipientId, firstUnknownLogId, null, null);
 	}
 
-	public static PaxosMessage createSendLogMessage(int senderId, int recipientId, String logData, int logId)
+	public static PaxosMessage createSendLogMessage(int senderId, int recipientId, String logData)
 	{
-		return new PaxosMessage(PaxosMessageType.SEND_LOG, senderId, recipientId, logId, logData, null);
+		return new PaxosMessage(PaxosMessageType.SEND_LOG, senderId, recipientId, NO_LOG_ID, logData, null);
 	}
 
 	public PaxosMessageType getMessageType()
@@ -63,7 +63,7 @@ public class PaxosMessage
 		return m_recipientId;
 	}
 
-	public int getLogId()
+	public int getFirstUnknownLogId()
 	{
 		return m_logId;
 	}
@@ -86,7 +86,16 @@ public class PaxosMessage
 		builder.append(Decree.DELIMITER);
 		builder.append(Integer.toString(m_recipientId));
 		builder.append(Decree.DELIMITER);
-		builder.append(m_decree.toString());
+		builder.append(m_messageType);
+		builder.append(Decree.DELIMITER);
+		if (m_decree != null)
+		{
+			builder.append(m_decree.toString());
+		}
+		else
+		{
+			builder.append(m_logId);
+		}
 
 		return builder.toString();
 	}

@@ -11,11 +11,12 @@ import edu.wheaton.paxos.utility.RunnableOfT;
 
 public final class PostOffice
 {
-	public PostOffice(RunnableOfT<String> updateTimeDisplayRunnable)
+	public PostOffice(RunnableOfT<String> updateTimeDisplayRunnable, RunnableOfT<Integer> removeParticipantRunnable)
 	{
-		m_eventQueue = Queues.newPriorityQueue();
+		m_eventQueue = Queues.newPriorityBlockingQueue();
 		m_participants = Lists.newArrayList();
 		m_updateTimeDisplayRunnable = updateTimeDisplayRunnable;
+		m_removeParticipantRunnable = removeParticipantRunnable;
 
 		m_lock = new Object();
 		m_time = 0;
@@ -24,7 +25,10 @@ public final class PostOffice
 
 	public void addParticipant(int participantId)
 	{
-		m_participants.add(new Participant(participantId, m_sendMessageRunnable, m_participants));
+		List<Integer> participantIds = Lists.newArrayList();
+		for (Participant participant : m_participants)
+			participantIds.add(participant.getId());
+		m_participants.add(new Participant(participantId, m_sendMessageRunnable, m_onResignationRunnable, participantIds));
 	}
 
 	public void addParticipantDetailsListener(int participantId, ParticipantDetailsListener listener)
@@ -74,6 +78,36 @@ public final class PostOffice
 		return m_paused;
 	}
 
+	public void sendEnterMessage(int participantId)
+	{
+		sendCommand(participantId, CommandMessage.ENTER);
+	}
+
+	public void sendLeaveMessage(int participantId, boolean withAmnesia)
+	{
+		if (withAmnesia)
+			sendCommand(participantId, CommandMessage.LEAVE_WITH_AMNESIA);
+		else
+			sendCommand(participantId, CommandMessage.LEAVE);
+	}
+
+	public void sendResignMessage(int participantId)
+	{
+		sendCommand(participantId, CommandMessage.RESIGN);
+	}
+
+	private void sendCommand(int participantId, CommandMessage command)
+	{
+		for (Participant participant : m_participants)
+		{
+			if (participant.getId() == participantId)
+			{
+				participant.executeCommand(command);
+				return;
+			}
+		}
+	}
+
 	private void sendCommand(List<Participant> participants, CommandMessage command)
 	{
 		for (Participant participant : participants)
@@ -103,7 +137,7 @@ public final class PostOffice
 					else
 					{
 						PaxosEvent event = m_eventQueue.poll();
-						m_time = event.getTime();
+						m_time = event.getTime();  //TODO: NPE here, sometimes
 						m_updateTimeDisplayRunnable.run(Long.toString(m_time));
 						PaxosMessage message = event.getMessage();
 						int id = message.getRecipientId();
@@ -136,17 +170,32 @@ public final class PostOffice
 		@Override
 		public void run(PaxosMessage message)
 		{
-			// TODO: Randomize success
-			addEvent(new PaxosEvent(m_time + DELAY, message));
+			addEvent(new PaxosEvent(m_time, message));
 		}
 	};
 
-	private static final int DELAY = 10;
+	private final RunnableOfT<Integer> m_onResignationRunnable = new RunnableOfT<Integer>()
+	{
+		@Override
+		public void run(Integer participantId)
+		{
+			for (int i = 0; i < m_participants.size(); i++)
+			{
+				if (m_participants.get(i).getId() == participantId)
+				{
+					m_participants.remove(i);
+					break;
+				}
+			}
+			m_removeParticipantRunnable.run(participantId);
+		};
+	};
 
 	private final Queue<PaxosEvent> m_eventQueue;
 	private final List<Participant> m_participants;
 	private final Object m_lock;
 	private final RunnableOfT<String> m_updateTimeDisplayRunnable;
+	private final RunnableOfT<Integer> m_removeParticipantRunnable;
 
 	private volatile boolean m_stopped;
 	private volatile boolean m_paused;

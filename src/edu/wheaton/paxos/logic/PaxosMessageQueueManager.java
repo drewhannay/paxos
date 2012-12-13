@@ -12,7 +12,7 @@ public final class PaxosMessageQueueManager
 {
 	public static PaxosQueue<PaxosMessage> createPaxosMessageQueue(int participantId)
 	{
-		Queue<PaxosMessage> innerQueue = Queues.newArrayDeque();
+		Queue<PaxosMessage> innerQueue = Queues.newConcurrentLinkedQueue();
 		PaxosQueue<PaxosMessage> queue = new PaxosQueue<PaxosMessage>(innerQueue);
 		m_queues.put(Integer.valueOf(participantId), queue);
 

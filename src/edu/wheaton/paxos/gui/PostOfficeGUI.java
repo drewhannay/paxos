@@ -34,18 +34,11 @@ public class PostOfficeGUI extends JFrame
 
     public PostOfficeGUI()
     {
-    	m_postOffice = new PostOffice(m_updateTimeDisplayRunnable);
+    	m_postOffice = new PostOffice(m_updateTimeDisplayRunnable, m_removeParticipantRunnable);
         initComponents();
 
+        // Create the leader
         m_plusButtonListener.actionPerformed(null);
-        m_plusButtonListener.actionPerformed(null);
-        m_plusButtonListener.actionPerformed(null);
-//		m_postOffice.addEvent(new PaxosEvent(m_time++,
-//				new PaxosMessage(0, 1, Decree.createOpaqueDecree(0, "test"))));
-//		m_postOffice.addEvent(new PaxosEvent(m_time++, 
-//				new PaxosMessage(1, 2, Decree.createOpaqueDecree(0, "ignore me"))));
-//		m_postOffice.addEvent(new PaxosEvent(m_time++, 
-//				new PaxosMessage(2, 3, Decree.createOpaqueDecree(1, "test2"))));
     }
 
     private void initComponents()
@@ -69,7 +62,6 @@ public class PostOfficeGUI extends JFrame
     	m_homeButton = new JButton();
         m_playPauseButton = new JButton();
         m_plusButton = new JButton();
-        m_minusButton = new JButton();
         m_promoteButton = new JButton();
         m_messagesButton = new JButton();
         m_resignButton = new JButton();
@@ -189,21 +181,15 @@ public class PostOfficeGUI extends JFrame
         );
 
         m_plusMinusPanel.setBorder(BorderFactory.createEtchedBorder());
-        m_plusButton.setText("+");
+        m_plusButton.setText("Add Participant");
         m_plusButton.addActionListener(m_plusButtonListener);
         
-        m_minusButton.setText("-");
-        m_minusButton.addActionListener(m_minusButtonListener);
-
-
         GroupLayout PlusMinusPanelLayout = new GroupLayout(m_plusMinusPanel);
         m_plusMinusPanel.setLayout(PlusMinusPanelLayout);
         PlusMinusPanelLayout.setHorizontalGroup(
             PlusMinusPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(PlusMinusPanelLayout.createSequentialGroup()
-                .addComponent(m_plusButton, GroupLayout.PREFERRED_SIZE, 41, GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(m_minusButton, GroupLayout.PREFERRED_SIZE, 41, GroupLayout.PREFERRED_SIZE)
+                .addComponent(m_plusButton, GroupLayout.PREFERRED_SIZE, 120, GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
         PlusMinusPanelLayout.setVerticalGroup(
@@ -211,7 +197,6 @@ public class PostOfficeGUI extends JFrame
             .addGroup(PlusMinusPanelLayout.createSequentialGroup()
             		.addContainerGap()
                 .addGroup(PlusMinusPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                    .addComponent(m_minusButton, GroupLayout.PREFERRED_SIZE, 29, GroupLayout.PREFERRED_SIZE)
                     .addComponent(m_plusButton, GroupLayout.PREFERRED_SIZE, 29, GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
@@ -313,7 +298,7 @@ public class PostOfficeGUI extends JFrame
     private final ActionListener m_messageButtonListener = new ActionListener()
 	{
 		@Override
-		public void actionPerformed(ActionEvent arg0)
+		public void actionPerformed(ActionEvent event)
 		{
 			// TODO Auto-generated method stub
 		}
@@ -322,9 +307,10 @@ public class PostOfficeGUI extends JFrame
 	private final ActionListener m_resignButtonListener = new ActionListener()
 	{
 		@Override
-		public void actionPerformed(ActionEvent e)
+		public void actionPerformed(ActionEvent event)
 		{
-			// TODO Auto-generated method stub
+			if (m_selectedParticipantId > 0)
+				m_postOffice.sendResignMessage(m_selectedParticipantId);
 		}
 	};
 
@@ -333,14 +319,15 @@ public class PostOfficeGUI extends JFrame
 		@Override
 		public void actionPerformed(ActionEvent event)
 		{
-			// TODO Auto-generated method stub
+			if (m_selectedParticipantId > 0)
+				m_postOffice.sendEnterMessage(m_selectedParticipantId);
 		}
 	};
 
 	private final ActionListener m_delayButtonListener = new ActionListener()
 	{
 		@Override
-		public void actionPerformed(ActionEvent e)
+		public void actionPerformed(ActionEvent event)
 		{
 			// TODO Auto-generated method stub
 		}
@@ -349,9 +336,10 @@ public class PostOfficeGUI extends JFrame
 	private final ActionListener m_leaveButtonListener = new ActionListener()
 	{
 		@Override
-		public void actionPerformed(ActionEvent e)
+		public void actionPerformed(ActionEvent event)
 		{
-			// TODO Auto-generated method stub
+			if (m_selectedParticipantId > 0)
+				m_postOffice.sendLeaveMessage(m_selectedParticipantId, false);
 		}
 	};
 
@@ -362,19 +350,6 @@ public class PostOfficeGUI extends JFrame
 		{
 			m_listModel.addElement("Participant " + m_participantIdGenerator);
 			m_postOffice.addParticipant(m_participantIdGenerator++);
-		}
-	};
-
-    private final ActionListener m_minusButtonListener = new ActionListener()
-	{
-		@Override
-		public void actionPerformed(ActionEvent event)
-		{
-			for (Object value : m_participantList.getSelectedValues())
-			{
-				// TODO actually remove the participant from the PostOffice
-				m_listModel.removeElement(value);
-			}
 		}
 	};
 
@@ -393,6 +368,25 @@ public class PostOfficeGUI extends JFrame
 		public void run(String time)
 		{
 			m_timeDisplay.setText("Time: " + time);
+		}
+	};
+
+	private final RunnableOfT<Integer> m_removeParticipantRunnable = new RunnableOfT<Integer>()
+	{
+		@Override
+		public void run(Integer participantId)
+		{
+			Object[] objects = m_listModel.toArray();
+			for (int i = 0; i < objects.length; i++)
+			{
+				String participantString = objects[i].toString();
+				if (participantString.endsWith(participantId.toString()))
+				{
+					m_listModel.remove(i);
+					break;
+				}
+			}
+			
 		}
 	};
 
@@ -415,6 +409,7 @@ public class PostOfficeGUI extends JFrame
 				m_logTextPane.setText("");
 				m_queueTextPane.setText("");
 				m_participantDetailsTextPane.setText("");
+				m_selectedParticipantId = 0;
 			}
 			else
 			{
@@ -451,7 +446,6 @@ public class PostOfficeGUI extends JFrame
 			}
 		}
 
-	    private int m_selectedParticipantId;
 	    private LogUpdateListener m_logUpdateListener;
 	    private QueueUpdateListener m_queueUpdateListener;
 	    private ParticipantDetailsListener m_participantDetailsListener;
@@ -483,7 +477,6 @@ public class PostOfficeGUI extends JFrame
     private JButton m_homeButton;
     private JButton m_playPauseButton;
     private JButton m_plusButton;
-    private JButton m_minusButton;
     private JButton m_promoteButton;
     private JButton m_messagesButton;
     private JButton m_resignButton;
@@ -494,4 +487,6 @@ public class PostOfficeGUI extends JFrame
     private JList m_participantList;
     private JScrollPane m_participantListScrollPane;
     private DefaultListModel m_listModel;
+
+    private int m_selectedParticipantId;
 }

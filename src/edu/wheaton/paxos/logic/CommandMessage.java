@@ -6,6 +6,5 @@ public enum CommandMessage
 	ENTER,
 	LEAVE,
 	LEAVE_WITH_AMNESIA,
-	SHOW,
-	HIDE;
+	RESIGN;
 }

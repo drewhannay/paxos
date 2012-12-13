@@ -135,28 +135,15 @@ public class PaxosLog
 	
 	public int getLatestLogId()
 	{
-		int logId = 0;
-		try
-		{
-			Scanner scanner = new Scanner(m_file);
-			String line = "";
-
-			while (scanner.hasNextLine())
-			{
-				line = scanner.nextLine();
-				if (line.startsWith(LogState.COMMIT.toString()))
-					logId = getIdFromLogEntry(line);
-			}
-			scanner.close();
-		}
-		catch (FileNotFoundException e)
-		{
-			e.printStackTrace();
-		}
-		return logId;
+		return getLogIdHelper(false);
 	}
 
-	public String getLogSinceId(int logId)
+	public int getLastWrittenLogId()
+	{
+		return getLogIdHelper(true);
+	}
+
+	public String getLogSinceId(int firstNeededLogId)
 	{
 		StringBuilder logBuilder = new StringBuilder();
 		try
@@ -168,10 +155,13 @@ public class PaxosLog
 				String line = scanner.nextLine();
 				if (!line.startsWith(LogState.COMMIT.toString()))
 					continue;
-				if (!isPastGivenId && getIdFromLogEntry(line) == logId)
+				if (!isPastGivenId && getIdFromLogEntry(line) == firstNeededLogId)
 					isPastGivenId = true;
 				if (isPastGivenId)
-					logBuilder.append(line);
+				{
+					logBuilder.append(line.substring(line.indexOf(Decree.DELIMITER) + Decree.DELIMITER.length()));
+					logBuilder.append('\n');
+				}
 			}
 			scanner.close();
 		}
@@ -249,6 +239,29 @@ public class PaxosLog
 	{
 		int firstDelimiter = logEntry.indexOf(Decree.DELIMITER) + Decree.DELIMITER.length();
 		return Integer.parseInt(logEntry.substring(firstDelimiter, logEntry.indexOf(Decree.DELIMITER, firstDelimiter)));
+	}
+
+	private int getLogIdHelper(boolean includePrepare)
+	{
+		int logId = 0;
+		try
+		{
+			Scanner scanner = new Scanner(m_file);
+			String line = "";
+
+			while (scanner.hasNextLine())
+			{
+				line = scanner.nextLine();
+				if (includePrepare || line.startsWith(LogState.COMMIT.toString()))
+					logId = getIdFromLogEntry(line);
+			}
+			scanner.close();
+		}
+		catch (FileNotFoundException e)
+		{
+			e.printStackTrace();
+		}
+		return logId;
 	}
 
 	public enum LogState
