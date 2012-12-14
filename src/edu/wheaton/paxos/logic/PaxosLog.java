@@ -26,7 +26,7 @@ public class PaxosLog
 
 		m_file = new File(logDirectory, partipantId + ".log");
 		m_firstLogId = -1;
-		m_listeners = Lists.newArrayList();
+		m_listeners = Lists.newCopyOnWriteArrayList();
 		if (m_file.exists())
 		{
 			if (!m_file.delete())

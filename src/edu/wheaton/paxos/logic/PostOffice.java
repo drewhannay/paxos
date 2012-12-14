@@ -170,7 +170,7 @@ public final class PostOffice
 		@Override
 		public void run(PaxosMessage message)
 		{
-			addEvent(new PaxosEvent(m_time, message));
+			addEvent(new PaxosEvent(m_time + DELAY, message));
 		}
 	};
 
@@ -190,6 +190,8 @@ public final class PostOffice
 			m_removeParticipantRunnable.run(participantId);
 		};
 	};
+
+	private static final int DELAY = 1;
 
 	private final Queue<PaxosEvent> m_eventQueue;
 	private final List<Participant> m_participants;

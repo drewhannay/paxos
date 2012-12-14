@@ -13,6 +13,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.LayoutStyle;
@@ -62,11 +63,8 @@ public class PostOfficeGUI extends JFrame
     	m_homeButton = new JButton();
         m_playPauseButton = new JButton();
         m_plusButton = new JButton();
-        m_promoteButton = new JButton();
-        m_messagesButton = new JButton();
         m_resignButton = new JButton();
         m_enterButton = new JButton();
-        m_delayButton = new JButton();
         m_leaveButton = new JButton();
 
         m_participantList = new JList();
@@ -129,20 +127,11 @@ public class PostOfficeGUI extends JFrame
 
         m_operationsPanel.setBorder(BorderFactory.createEtchedBorder());
 
-        m_promoteButton.setText("Promote");
-        m_promoteButton.addActionListener(m_promoteButtonListener);
-
-        m_messagesButton.setText("Messages");
-        m_messagesButton.addActionListener(m_messageButtonListener);
-
         m_resignButton.setText("Resign");
         m_resignButton.addActionListener(m_resignButtonListener);
 
         m_enterButton.setText("Enter");
         m_enterButton.addActionListener(m_enterButtonListener);
-
-        m_delayButton.setText("Delay");
-        m_delayButton.addActionListener(m_delayButtonListener);
 
         m_leaveButton.setText("Leave");
         m_leaveButton.addActionListener(m_leaveButtonListener);
@@ -155,26 +144,17 @@ public class PostOfficeGUI extends JFrame
                 .addContainerGap()
                 .addGroup(operationsPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addComponent(m_leaveButton, GroupLayout.DEFAULT_SIZE, 76, Short.MAX_VALUE)
-                    .addComponent(m_delayButton, GroupLayout.DEFAULT_SIZE, 76, Short.MAX_VALUE)
                     .addComponent(m_enterButton, GroupLayout.DEFAULT_SIZE, 76, Short.MAX_VALUE)
-                    .addComponent(m_resignButton, GroupLayout.DEFAULT_SIZE, 76, Short.MAX_VALUE)
-                    .addComponent(m_messagesButton, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(m_promoteButton, GroupLayout.DEFAULT_SIZE, 76, Short.MAX_VALUE))
+                    .addComponent(m_resignButton, GroupLayout.DEFAULT_SIZE, 76, Short.MAX_VALUE))
                 .addContainerGap())
         );
         operationsPanelLayout.setVerticalGroup(
             operationsPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(GroupLayout.Alignment.TRAILING, operationsPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(m_promoteButton)
-                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(m_messagesButton)
-                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(m_resignButton)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(m_enterButton)
-                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(m_delayButton)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(m_leaveButton)
                 .addContainerGap())
@@ -223,9 +203,9 @@ public class PostOfficeGUI extends JFrame
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(m_queueJScrollPane, 200, 400, Short.MAX_VALUE)
+                        .addComponent(m_queueJScrollPane, 200, 500, Short.MAX_VALUE)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(m_logJScrollPane, 200, 400, Short.MAX_VALUE))
+                        .addComponent(m_logJScrollPane, 200, 500, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(m_detailsJScrollPane, 200, 230, GroupLayout.DEFAULT_SIZE)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
@@ -245,7 +225,7 @@ public class PostOfficeGUI extends JFrame
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                            .addComponent(m_detailsJScrollPane, GroupLayout.DEFAULT_SIZE, 250, GroupLayout.PREFERRED_SIZE)
+                            .addComponent(m_detailsJScrollPane, GroupLayout.DEFAULT_SIZE, 150, GroupLayout.PREFERRED_SIZE)
                             .addComponent(m_operationsPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE)
                             )
                         .addGap(18, 18, 18)
@@ -286,24 +266,6 @@ public class PostOfficeGUI extends JFrame
 		}
 	};
 
-    private final ActionListener m_promoteButtonListener = new ActionListener()
-	{
-		@Override
-		public void actionPerformed(ActionEvent event)
-		{
-			// TODO Auto-generated method stub
-		}
-	};
-
-    private final ActionListener m_messageButtonListener = new ActionListener()
-	{
-		@Override
-		public void actionPerformed(ActionEvent event)
-		{
-			// TODO Auto-generated method stub
-		}
-	};
-
 	private final ActionListener m_resignButtonListener = new ActionListener()
 	{
 		@Override
@@ -321,15 +283,6 @@ public class PostOfficeGUI extends JFrame
 		{
 			if (m_selectedParticipantId > 0)
 				m_postOffice.sendEnterMessage(m_selectedParticipantId);
-		}
-	};
-
-	private final ActionListener m_delayButtonListener = new ActionListener()
-	{
-		@Override
-		public void actionPerformed(ActionEvent event)
-		{
-			// TODO Auto-generated method stub
 		}
 	};
 
@@ -422,6 +375,8 @@ public class PostOfficeGUI extends JFrame
 					public void onLogUpdate(String updatedLog)
 					{
 						m_logTextPane.setText(updatedLog);
+						JScrollBar vertical = m_logJScrollPane.getVerticalScrollBar();
+						vertical.setValue(vertical.getMaximum());
 					}
 				};
 		        PaxosLogManager.addLogUpdateListener(m_selectedParticipantId, m_logUpdateListener);
@@ -477,11 +432,8 @@ public class PostOfficeGUI extends JFrame
     private JButton m_homeButton;
     private JButton m_playPauseButton;
     private JButton m_plusButton;
-    private JButton m_promoteButton;
-    private JButton m_messagesButton;
     private JButton m_resignButton;
     private JButton m_enterButton;
-    private JButton m_delayButton;
     private JButton m_leaveButton;
 
     private JList m_participantList;

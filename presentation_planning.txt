@@ -1,0 +1,39 @@
+1) Theoretical Paxos
+	a) What problem Paxos solves
+	b) Why that matters
+	c) How it works
+		i) "Live" Demo
+	d) Questions?
+2) Paxos Simulator
+	a) Our Goals Starting Out
+	b) Demo Simulator
+	c) Explanation of code structure
+3) Difficulties with the Simulator
+	a) Overly ambitious goals for time given
+	b) Understanding the Paxos protocol
+		i) Classes like Decree were redefined several times as our understanding became clearer
+		ii) Understanding time and clocks within the situation
+		iii) Understanding three phase commit
+	c) Amnesia between class periods (poor documentation habits)
+	d) No ability to test until most of the code was written
+	e) Bottleneck at the Leader
+		i) Message explosions
+		ii) REQUEST_LOG messages
+4) Future improvements
+	a) Implementing Clocks in Participants
+	b) Adding the leader expirations and SET_LEADER decrees
+	c) Allow for REJECT messages ("Dealing with Rejection")
+	d) Spreading the load of log requests to avoid leader overload
+	e) Limiting the number of duplicate accept messages
+	f) Allow for user intervention during simulation runs
+		i) Modifying queue data
+		ii) Modifying the probability of different events happening
+		iii) Additional Participant directions (Initiate Proposal, Set Leader, etc)
+	g) Display Improvements
+		i) Allow viewing multiple participants at once
+		ii) Concurrency issues with Swing
+	h) Allow user scripts detailing instructions for a simulation
+	i) Allow the simulator to run over several machines
+	j) Suggestions for improvements?
+5) Questions?
+6) A Word From Dr. Gray
